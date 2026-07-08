@@ -262,8 +262,7 @@ $tareas = $stmtTareas->fetchAll();
                             <th>Gerencia</th>
                             <th>Área</th>
                             <th>Actividad</th>
-                            <th>Nivel Riesgo Inicial</th>
-                            <th>Nivel Riesgo Final</th>
+                            <th>Nivel de Riesgo</th>
                             <th>Ubicación</th>
                             <th>Fecha</th>
                             <th>Tipo de ATS</th>
@@ -289,30 +288,7 @@ $tareas = $stmtTareas->fetchAll();
                                     <td><?php echo htmlspecialchars($tarea['gerencia']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['area']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['actividad']); ?></td>
-                                    <?php
-                                        // Obtener valores inicial/final respetando compatibilidad hacia atrás
-                                        if (isset($tarea['nivel_riesgo_inicial']) || isset($tarea['nivel_riesgo_final'])) {
-                                            $niv_ini = $tarea['nivel_riesgo_inicial'] ?? '';
-                                            $niv_fin = $tarea['nivel_riesgo_final'] ?? '';
-                                        } else {
-                                            $parts = explode('/', $tarea['nivel_riesgo'] ?? '');
-                                            $niv_ini = trim($parts[0] ?? '');
-                                            $niv_fin = trim($parts[1] ?? '');
-                                        }
-
-                                        if (!function_exists('badge_for')) {
-                                            function badge_for($nivel) {
-                                                $l = strtolower($nivel);
-                                                if (strpos($l, 'extremo') !== false) return 'badge-critico';
-                                                if (strpos($l, 'alto') !== false) return 'badge-alto';
-                                                if (strpos($l, 'moderado') !== false) return 'badge-medio';
-                                                if (strpos($l, 'bajo') !== false) return 'badge-bajo';
-                                                return 'badge-secondary';
-                                            }
-                                        }
-                                    ?>
-                                    <td><span class="badge <?php echo badge_for($niv_ini); ?>"><?php echo htmlspecialchars($niv_ini); ?></span></td>
-                                    <td><span class="badge <?php echo badge_for($niv_fin); ?>"><?php echo htmlspecialchars($niv_fin); ?></span></td>
+                                    <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $riesgoTexto; ?></span></td>
                                     <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
                                     <td><?php echo $tarea['fecha']; ?></td>
                                     <td><?php echo htmlspecialchars($tarea['tipo_ats']); ?></td>
