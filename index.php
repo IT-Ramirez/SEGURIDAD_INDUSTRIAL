@@ -39,30 +39,55 @@ if ($gerencia_seleccionada > 0 && !isset($_GET['action'])) {
     $abrir_modal = true; 
 }
 
+// Detectar si la tabla tiene columnas separadas para nivel de riesgo
+$stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicial'");
+$has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
+$stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
+$has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
+
 // 3. GUARDAR EL REGISTRO (MÉTODO POST TRADICIONAL)
 if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $gerencia_id = $_POST['gerencia_id'] ?? 0;
     $area_id = $_POST['area_id'] ?? 0;
-    $ubicacion = $_POST['ubicacion'] ?? '';
-    $nivel_riesgo = $_POST['nivel_riesgo'] ?? '';
+    $ubicacion = trim($_POST['ubicacion'] ?? '');
+    $nivel_riesgo_inicial = trim($_POST['nivel_riesgo_inicial'] ?? '');
+    $nivel_riesgo_final = trim($_POST['nivel_riesgo_final'] ?? '');
     $fecha = $_POST['fecha'] ?? '';
-    $tipo_ats = $_POST['tipo_ats'] ?? '';
-    $actividad = $_POST['actividad'] ?? '';
+    $tipo_ats = trim($_POST['tipo_ats'] ?? '');
+    $actividad = trim($_POST['actividad'] ?? '');
 
-    if ($gerencia_id && $area_id && $ubicacion && $nivel_riesgo && $fecha && $tipo_ats && $actividad) {
-        $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, tipo_ats, actividad) 
-                VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :tipo_ats, :actividad)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':gerencia_id'  => $gerencia_id,
-            ':area_id'      => $area_id,
-            ':ubicacion'    => $ubicacion,
-            ':nivel_riesgo' => $nivel_riesgo,
-            ':fecha'        => $fecha,
-            ':tipo_ats'     => $tipo_ats,
-            ':actividad'    => $actividad
-        ]);
-        
+    if ($gerencia_id && $area_id && $ubicacion && $nivel_riesgo_inicial && $nivel_riesgo_final && $fecha && $tipo_ats && $actividad) {
+        // Si la tabla tiene columnas separadas, usarlas; si no, guardar en el campo único existente
+        if ($has_nivel_inicial && $has_nivel_final) {
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, fecha, tipo_ats, actividad)
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :fecha, :tipo_ats, :actividad)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':gerencia_id' => $gerencia_id,
+                ':area_id' => $area_id,
+                ':ubicacion' => $ubicacion,
+                ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
+                ':nivel_riesgo_final' => $nivel_riesgo_final,
+                ':fecha' => $fecha,
+                ':tipo_ats' => $tipo_ats,
+                ':actividad' => $actividad
+            ]);
+        } else {
+            $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, tipo_ats, actividad) 
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :tipo_ats, :actividad)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':gerencia_id'  => $gerencia_id,
+                ':area_id'      => $area_id,
+                ':ubicacion'    => $ubicacion,
+                ':nivel_riesgo' => $nivel_riesgo,
+                ':fecha'        => $fecha,
+                ':tipo_ats'     => $tipo_ats,
+                ':actividad'    => $actividad
+            ]);
+        }
+
         echo "<script>alert('Registro de ATS guardado exitosamente.'); window.location.href='index.php';</script>";
         exit;
     }
@@ -72,8 +97,25 @@ if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST
 $gerencias = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC")->fetchAll();
 
 // 5. CONSTRUCCIÓN DE LA CONSULTA CON FILTROS DINÁMICOS
-$sqlTareas = "SELECT t.id, g.nombre AS gerencia, a.nombre AS area, t.actividad, t.nivel_riesgo, t.ubicacion, t.fecha, t.tipo_ats 
-              FROM tareas t
+// Construir SELECT dinámico según columnas disponibles
+$selectCols = [
+    't.id',
+    'g.nombre AS gerencia',
+    'a.nombre AS area',
+    't.actividad',
+    't.ubicacion',
+    't.fecha',
+    't.tipo_ats'
+];
+
+if ($has_nivel_inicial && $has_nivel_final) {
+    $selectCols[] = 't.nivel_riesgo_inicial';
+    $selectCols[] = 't.nivel_riesgo_final';
+} else {
+    $selectCols[] = 't.nivel_riesgo';
+}
+
+$sqlTareas = "SELECT " . implode(', ', $selectCols) . " FROM tareas t
               INNER JOIN gerencias g ON t.gerencia_id = g.id
               INNER JOIN areas a ON t.area_id = a.id";
 
@@ -108,30 +150,47 @@ $tareas = $stmtTareas->fetchAll();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --eqx-gold: #DCA11D; --eqx-dark: #1A1A1A; --eqx-light-dark: #2D2D2D; }
-        
-        /* Aumento del tamaño general de la fuente */
-        body { background-color: #f8f9fa; font-size: 1.05rem; }
-        
-        .navbar-eqx { background-color: var(--eqx-dark); border-bottom: 4px solid var(--eqx-gold); }
-        .navbar-brand { font-size: 1.4rem; }
-        
-        .btn-gold { background-color: var(--eqx-gold); color: #000; font-weight: 600; font-size: 1.1rem; }
+        :root {
+            --eqx-primary: #24415D;
+            --eqx-accent: #DCA11D;
+            --eqx-dark: #1A1A1A;
+            --eqx-light-dark: #2D2D2D;
+        }
+
+        body { background: linear-gradient(135deg, #f5f7fb 0%, #eef3f8 100%); font-size: 1.05rem; }
+
+        .navbar-eqx {
+            background: linear-gradient(90deg, var(--eqx-primary) 0%, #2f5873 100%);
+            border-bottom: 4px solid var(--eqx-accent);
+        }
+        .navbar-brand { font-size: 1.35rem; }
+        .navbar-logo { height: 38px; width: auto; }
+
+        .btn-gold {
+            background-color: var(--eqx-accent);
+            color: #000;
+            font-weight: 600;
+            font-size: 1.05rem;
+            border: none;
+        }
         .btn-gold:hover { background-color: #c48f17; color: #000; }
-        
-        .card-header-eqx { background-color: var(--eqx-light-dark); color: #fff; border-left: 5px solid var(--eqx-gold); }
+
+        .card-header-eqx {
+            background: linear-gradient(90deg, var(--eqx-primary) 0%, #2f5873 100%);
+            color: #fff;
+            border-left: 5px solid var(--eqx-accent);
+        }
         .card-header-eqx h5 { font-size: 1.25rem; }
-        
-        /* Formato ampliado para la tabla */
+
         .table th { font-size: 1.1rem; padding: 12px 8px; }
         .table td { font-size: 1.05rem; padding: 12px 8px; }
-        
+
         .badge { font-size: 0.95rem; padding: 6px 10px; }
         .badge-bajo { background-color: #198754; color: #fff; }
         .badge-medio { background-color: #ffc107; color: #000; }
         .badge-alto { background-color: #fd7e14; color: #fff; }
         .badge-critico { background-color: #dc3545; color: #fff; }
-        
+
         .form-label { font-size: 1.1rem; }
         .form-select, .form-control { font-size: 1.05rem; }
     </style>
@@ -140,9 +199,9 @@ $tareas = $stmtTareas->fetchAll();
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-eqx mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand shadow-sm" href="#">
-            <i class="fa-solid fa-helmet-safety text-warning me-2"></i> 
-            <strong>EQUINOX GOLD</strong> | Panel de Tareas y ATS
+        <a class="navbar-brand shadow-sm d-flex align-items-center" href="#">
+            <img src="image/eqx.jpg" alt="Equinox Gold" class="navbar-logo me-2">
+            <span><strong>EQUINOX GOLD</strong> | Panel de Tareas y ATS</span>
         </a>
     </div>
 </nav>
@@ -212,17 +271,24 @@ $tareas = $stmtTareas->fetchAll();
                     <tbody>
                         <?php if (count($tareas) > 0): ?>
                             <?php foreach ($tareas as $tarea): 
+                                $riesgoTexto = htmlspecialchars($tarea['nivel_riesgo']);
+                                $riesgoLower = strtolower($tarea['nivel_riesgo']);
                                 $badgeClass = 'badge-bajo';
-                                if (strtolower($tarea['nivel_riesgo']) === 'medio') $badgeClass = 'badge-medio';
-                                if (strtolower($tarea['nivel_riesgo']) === 'alto') $badgeClass = 'badge-alto';
-                                if (strtolower($tarea['nivel_riesgo']) === 'crítico' || strtolower($tarea['nivel_riesgo']) === 'critico') $badgeClass = 'badge-critico';
+
+                                if (strpos($riesgoLower, 'extremo') !== false) {
+                                    $badgeClass = 'badge-critico';
+                                } elseif (strpos($riesgoLower, 'alto') !== false) {
+                                    $badgeClass = 'badge-alto';
+                                } elseif (strpos($riesgoLower, 'moderado') !== false) {
+                                    $badgeClass = 'badge-medio';
+                                }
                             ?>
                                 <tr>
                                     <td><strong>#<?php echo $tarea['id']; ?></strong></td>
                                     <td><?php echo htmlspecialchars($tarea['gerencia']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['area']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['actividad']); ?></td>
-                                    <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $tarea['nivel_riesgo']; ?></span></td>
+                                    <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $riesgoTexto; ?></span></td>
                                     <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
                                     <td><?php echo $tarea['fecha']; ?></td>
                                     <td><?php echo htmlspecialchars($tarea['tipo_ats']); ?></td>
@@ -241,7 +307,7 @@ $tareas = $stmtTareas->fetchAll();
 <div class="modal fade" id="modalAgregarTarea" tabindex="-1" aria-labelledby="modalAgregarTareaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header text-white" style="background-color: var(--eqx-dark); border-bottom: 3px solid var(--eqx-gold);">
+            <div class="modal-header text-white" style="background-color: var(--eqx-primary); border-bottom: 3px solid var(--eqx-accent);">
                 <h5 class="modal-title" id="modalAgregarTareaLabel"><i class="fa-solid fa-file-medical me-2"></i>Nuevo Registro de Tarea / ATS</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="window.location.href='index.php'"></button>
             </div>
@@ -274,21 +340,34 @@ $tareas = $stmtTareas->fetchAll();
                             <?php endif; ?>
                         </select>
                     </div>
-                    
+                   
+
                     <div class="col-md-6">
-                        <label for="ubicacion" class="form-label"><strong>Ubicación Específica</strong></label>
-                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="<?php echo htmlspecialchars($_POST['ubicacion'] ?? ''); ?>" placeholder="Ej: Banco 240, Stockpile" required>
+                        <label for="nivel_riesgo_inicial" class="form-label"><strong>Nivel de Riesgo Inicial</strong></label>
+                        <select class="form-select" id="nivel_riesgo_inicial" name="nivel_riesgo_inicial" required>
+                            <option value="" selected disabled>Seleccione una opción...</option>
+                            <option value="Bajo" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Bajo') ? 'selected' : ''; ?>>Bajo 1-5</option>
+                            <option value="Moderado" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Moderado') ? 'selected' : ''; ?>>Moderado 6-10</option>
+                            <option value="Alto" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Alto') ? 'selected' : ''; ?>>Alto 11-17</option>
+                            <option value="Extremo" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Extremo') ? 'selected' : ''; ?>>Extremo 18-25</option>
+                        </select>
                     </div>
 
                     <div class="col-md-6">
-                        <label for="nivel_riesgo" class="form-label"><strong>Nivel de Riesgo</strong></label>
-                        <select class="form-select" id="nivel_riesgo" name="nivel_riesgo" required>
+                        <label for="nivel_riesgo_final" class="form-label"><strong>Nivel de Riesgo Final</strong></label>
+                        <select class="form-select" id="nivel_riesgo_final" name="nivel_riesgo_final" required>
                             <option value="" selected disabled>Seleccione una opción...</option>
-                            <option value="Bajo" <?php echo (isset($_POST['nivel_riesgo']) && $_POST['nivel_riesgo'] == 'Bajo') ? 'selected' : ''; ?>>Bajo</option>
-                            <option value="Medio" <?php echo (isset($_POST['nivel_riesgo']) && $_POST['nivel_riesgo'] == 'Medio') ? 'selected' : ''; ?>>Medio</option>
-                            <option value="Alto" <?php echo (isset($_POST['nivel_riesgo']) && $_POST['nivel_riesgo'] == 'Alto') ? 'selected' : ''; ?>>Alto</option>
-                            <option value="Crítico" <?php echo (isset($_POST['nivel_riesgo']) && $_POST['nivel_riesgo'] == 'Crítico') ? 'selected' : ''; ?>>Crítico</option>
+                            <option value="Bajo" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Bajo') ? 'selected' : ''; ?>>Bajo 1-5</option>
+                            <option value="Moderado" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Moderado') ? 'selected' : ''; ?>>Moderado 6-10</option>
+                            <option value="Alto" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Alto') ? 'selected' : ''; ?>>Alto 11-17</option>
+                            <option value="Extremo" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Extremo') ? 'selected' : ''; ?>>Extremo 18-25</option>
                         </select>
+                    </div>
+
+ 
+                    <div class="col-md-6">
+                        <label for="ubicacion" class="form-label"><strong>Ubicación Específica</strong></label>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="<?php echo htmlspecialchars($_POST['ubicacion'] ?? ''); ?>" placeholder="Ej: Banco 240, Stockpile" required>
                     </div>
 
                     <div class="col-md-6">

@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 
 $host = "localhost";
 $user = "root";       
-$password = "";       
+$password = "Tecnologias11-11";       
 $database = "equinox_gold";
 
 try {
@@ -16,13 +16,25 @@ try {
     exit;
 }
 
+$stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicial'");
+$has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
+$stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
+$has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
+
 $action = $_GET['action'] ?? '';
 
 // 1. Listar todas las tareas (con INNER JOIN para traer los nombres de gerencia y área)
 if ($action === 'listar') {
     try {
-        $sql = "SELECT t.id, g.nombre AS gerencia, a.nombre AS area, t.actividad, t.nivel_riesgo, t.ubicacion, t.fecha, t.tipo_ats 
-                FROM tareas t
+        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.tipo_ats'];
+        if ($has_nivel_inicial && $has_nivel_final) {
+            $cols[] = 't.nivel_riesgo_inicial';
+            $cols[] = 't.nivel_riesgo_final';
+        } else {
+            $cols[] = 't.nivel_riesgo';
+        }
+
+        $sql = "SELECT " . implode(', ', $cols) . " FROM tareas t
                 INNER JOIN gerencias g ON t.gerencia_id = g.id
                 INNER JOIN areas a ON t.area_id = a.id
                 ORDER BY t.id DESC";
@@ -60,9 +72,12 @@ if ($action === 'get_areas_por_gerencia') {
 
 // 4. Guardar una nueva tarea vinculando los IDs correspondientes
 if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nivel_riesgo_inicial = trim($_POST['nivel_riesgo_inicial'] ?? '');
+    $nivel_riesgo_final = trim($_POST['nivel_riesgo_final'] ?? '');
+
     if (
         empty($_POST['gerencia_id']) || empty($_POST['area_id']) || 
-        empty($_POST['ubicacion']) || empty($_POST['nivel_riesgo']) || 
+        empty($_POST['ubicacion']) || empty($nivel_riesgo_inicial) || empty($nivel_riesgo_final) ||
         empty($_POST['fecha']) || empty($_POST['tipo_ats']) || empty($_POST['actividad'])
     ) {
         echo json_encode(["status" => "error", "message" => "Todos los campos son obligatorios."]);
@@ -70,19 +85,36 @@ if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, tipo_ats, actividad) 
-                VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :tipo_ats, :actividad)";
-        
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':gerencia_id'  => $_POST['gerencia_id'],
-            ':area_id'      => $_POST['area_id'],
-            ':ubicacion'    => $_POST['ubicacion'],
-            ':nivel_riesgo' => $_POST['nivel_riesgo'],
-            ':fecha'        => $_POST['fecha'],
-            ':tipo_ats'     => $_POST['tipo_ats'],
-            ':actividad'    => $_POST['actividad']
-        ]);
+        if ($has_nivel_inicial && $has_nivel_final) {
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, fecha, tipo_ats, actividad)
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :fecha, :tipo_ats, :actividad)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':gerencia_id' => $_POST['gerencia_id'],
+                ':area_id' => $_POST['area_id'],
+                ':ubicacion' => $_POST['ubicacion'],
+                ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
+                ':nivel_riesgo_final' => $nivel_riesgo_final,
+                ':fecha' => $_POST['fecha'],
+                ':tipo_ats' => $_POST['tipo_ats'],
+                ':actividad' => $_POST['actividad']
+            ]);
+        } else {
+            $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, tipo_ats, actividad) 
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :tipo_ats, :actividad)";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':gerencia_id'  => $_POST['gerencia_id'],
+                ':area_id'      => $_POST['area_id'],
+                ':ubicacion'    => $_POST['ubicacion'],
+                ':nivel_riesgo' => $nivel_riesgo,
+                ':fecha'        => $_POST['fecha'],
+                ':tipo_ats'     => $_POST['tipo_ats'],
+                ':actividad'    => $_POST['actividad']
+            ]);
+        }
 
         echo json_encode(["status" => "success", "message" => "Registro guardado correctamente."]);
     } catch (Exception $e) {
