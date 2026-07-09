@@ -1,10 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-$host = "localhost";
-$user = "usreqxApp";
-$password = "Fhj09y6mqDF#z7v";
-$database = "equinox_gold";
+include 'config.php';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $user, $password, [

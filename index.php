@@ -1,10 +1,6 @@
 <?php
 // 1. CONFIGURACIÓN DE CONEXIÓN A LA BASE DE DATOS
-$host = "localhost";
-$user = "usreqxApp";
-$password = "Fhj09y6mqDF#z7v";
-$database = "equinox_gold";
-
+include 'config.php';
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $user, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -252,7 +248,8 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                             <th>Gerencia</th>
                             <th>Área</th>
                             <th>Actividad</th>
-                            <th>Nivel de Riesgo</th>
+                            <th>Riesgo Inicial</th>
+                            <th>Riesgo Final</th>
                             <th>Ubicación</th>
                             <th>Fecha</th>
                             <th>Permisos Requeridos</th>
@@ -260,27 +257,26 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                     </thead>
                     <tbody>
                         <?php if (count($tareas) > 0): ?>
-                            <?php foreach ($tareas as $tarea): 
+                            <?php 
+                            // Función auxiliar para modularizar y reutilizar las clases de color de los niveles de riesgo
+                            $getBadgeClass = function($riesgo) {
+                                $lower = mb_strtolower($riesgo, 'UTF-8');
+                                if (strpos($lower, 'extremo') !== false) return 'badge-critico';
+                                if (strpos($lower, 'alto') !== false) return 'badge-alto';
+                                if (strpos($lower, 'moderado') !== false || strpos($lower, 'medio') !== false) return 'badge-medio';
+                                if (strpos($lower, 'bajo') !== false) return 'badge-bajo';
+                                return 'bg-secondary text-white';
+                            };
+
+                            foreach ($tareas as $tarea): 
                                 $riesgoInicial = trim($tarea['nivel_riesgo_inicial'] ?? '');
                                 $riesgoFinal = trim($tarea['nivel_riesgo_final'] ?? '');
-                                $riesgoTexto = '';
-                                $riesgoLower = '';
 
-                                if ($riesgoInicial !== '' || $riesgoFinal !== '') {
-                                    $riesgoTexto = htmlspecialchars(trim($riesgoInicial . ($riesgoFinal !== '' ? ' / ' . $riesgoFinal : '')));
-                                    $riesgoLower = strtolower($riesgoInicial ?: $riesgoFinal);
-                                } else {
-                                    $riesgoTexto = htmlspecialchars($tarea['nivel_riesgo'] ?? '');
-                                    $riesgoLower = strtolower($tarea['nivel_riesgo'] ?? '');
-                                }
-                                $badgeClass = 'badge-bajo';
-
-                                if (strpos($riesgoLower, 'extremo') !== false) {
-                                    $badgeClass = 'badge-critico';
-                                } elseif (strpos($riesgoLower, 'alto') !== false) {
-                                    $badgeClass = 'badge-alto';
-                                } elseif (strpos($riesgoLower, 'moderado') !== false) {
-                                    $badgeClass = 'badge-medio';
+                                // Si la base no cuenta con los campos independientes, procesamos el campo mixto 'nivel_riesgo'
+                                if ($riesgoInicial === '' && $riesgoFinal === '') {
+                                    $partes = explode('/', $tarea['nivel_riesgo'] ?? '');
+                                    $riesgoInicial = trim($partes[0] ?? '');
+                                    $riesgoFinal = trim($partes[1] ?? '');
                                 }
                             ?>
                                 <tr>
@@ -288,7 +284,23 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                                     <td><?php echo htmlspecialchars($tarea['gerencia']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['area']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['actividad']); ?></td>
-                                    <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $riesgoTexto; ?></span></td>
+                                    
+                                    <td>
+                                        <?php if ($riesgoInicial !== ''): ?>
+                                            <span class="badge <?php echo $getBadgeClass($riesgoInicial); ?>"><?php echo htmlspecialchars($riesgoInicial); ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">-</span>
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <td>
+                                        <?php if ($riesgoFinal !== ''): ?>
+                                            <span class="badge <?php echo $getBadgeClass($riesgoFinal); ?>"><?php echo htmlspecialchars($riesgoFinal); ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">-</span>
+                                        <?php endif; ?>
+                                    </td>
+
                                     <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
                                     <td><?php echo $tarea['fecha']; ?></td>
                                     <td>
@@ -315,7 +327,7 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <tr><td colspan="8" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>
+                            <tr><td colspan="9" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -406,7 +418,7 @@ function buildQueryString($page, $f_gerencia, $f_area) {
 
                     <div class="col-md-6">
                         <label for="ubicacion" class="form-label"><strong>Ubicación Específica</strong></label>
-                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ej: Banco 240, Stockpile" required>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ej: Banco 240, Veta nueva" required>
                     </div>
 
                     <div class="col-md-6">
