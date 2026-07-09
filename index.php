@@ -14,38 +14,23 @@ try {
     die("Error crítico de conexión: " . $e->getMessage());
 }
 
-// Variables de control de estado del Modal (Formulario)
-$gerencia_seleccionada = isset($_POST['gerencia_id']) ? intval($_POST['gerencia_id']) : 0;
-$areas_filtradas = [];
-$abrir_modal = false;
-
 // Variables de control para los Filtros de la Tabla Principal
 $filtro_gerencia = isset($_GET['filtro_gerencia']) ? intval($_GET['filtro_gerencia']) : 0;
 $filtro_area = isset($_GET['filtro_area']) ? intval($_GET['filtro_area']) : 0;
 $areas_filtro_tabla = [];
 
-// Cargar áreas para el filtro de la tabla si hay una gerencia seleccionada en el buscador
 if ($filtro_gerencia > 0) {
     $stmtFiltroAreas = $pdo->prepare("SELECT * FROM areas WHERE gerencia_id = ? ORDER BY nombre ASC");
     $stmtFiltroAreas->execute([$filtro_gerencia]);
     $areas_filtro_tabla = $stmtFiltroAreas->fetchAll();
 }
 
-// 2. CAMBIO DE GERENCIA EN MODAL: Cargar las áreas correspondientes mediante PHP
-if ($gerencia_seleccionada > 0 && !isset($_GET['action'])) {
-    $stmtAreas = $pdo->prepare("SELECT * FROM areas WHERE gerencia_id = ? ORDER BY nombre ASC");
-    $stmtAreas->execute([$gerencia_seleccionada]);
-    $areas_filtradas = $stmtAreas->fetchAll();
-    $abrir_modal = true; 
-}
-
-// Detectar si la tabla tiene columnas separadas para nivel de riesgo
 $stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicial'");
 $has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
 $stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
 $has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
 
-// 3. GUARDAR EL REGISTRO (MÉTODO POST TRADICIONAL)
+// 3. GUARDAR EL REGISTRO
 if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $gerencia_id = $_POST['gerencia_id'] ?? 0;
     $area_id = $_POST['area_id'] ?? 0;
@@ -53,14 +38,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST
     $nivel_riesgo_inicial = trim($_POST['nivel_riesgo_inicial'] ?? '');
     $nivel_riesgo_final = trim($_POST['nivel_riesgo_final'] ?? '');
     $fecha = $_POST['fecha'] ?? '';
-    $tipo_ats = trim($_POST['tipo_ats'] ?? '');
     $actividad = trim($_POST['actividad'] ?? '');
+    
+    $permisos_requeridos = $_POST['permisos_requeridos'] ?? [];
+    if (!is_array($permisos_requeridos)) {
+        $permisos_requeridos = [$permisos_requeridos];
+    }
+    $permisos_requeridos_json = json_encode(array_values($permisos_requeridos), JSON_UNESCAPED_UNICODE);
 
-    if ($gerencia_id && $area_id && $ubicacion && $nivel_riesgo_inicial && $nivel_riesgo_final && $fecha && $tipo_ats && $actividad) {
-        // Si la tabla tiene columnas separadas, usarlas; si no, guardar en el campo único existente
+    if ($gerencia_id && $area_id && $ubicacion && $nivel_riesgo_inicial && $nivel_riesgo_final && $fecha && $actividad) {
         if ($has_nivel_inicial && $has_nivel_final) {
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, fecha, tipo_ats, actividad)
-                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :fecha, :tipo_ats, :actividad)";
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, nivel_riesgo, fecha, permisos_requeridos, actividad)
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':gerencia_id' => $gerencia_id,
@@ -68,14 +57,15 @@ if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST
                 ':ubicacion' => $ubicacion,
                 ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
                 ':nivel_riesgo_final' => $nivel_riesgo_final,
+                ':nivel_riesgo' => '', 
                 ':fecha' => $fecha,
-                ':tipo_ats' => $tipo_ats,
+                ':permisos_requeridos' => $permisos_requeridos_json,
                 ':actividad' => $actividad
             ]);
         } else {
             $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, tipo_ats, actividad) 
-                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :tipo_ats, :actividad)";
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, permisos_requeridos, actividad) 
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':gerencia_id'  => $gerencia_id,
@@ -83,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST
                 ':ubicacion'    => $ubicacion,
                 ':nivel_riesgo' => $nivel_riesgo,
                 ':fecha'        => $fecha,
-                ':tipo_ats'     => $tipo_ats,
+                ':permisos_requeridos' => $permisos_requeridos_json,
                 ':actividad'    => $actividad
             ]);
         }
@@ -93,32 +83,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST
     }
 }
 
-// 4. DATOS MAESTROS PARA LOS SELECTS
 $gerencias = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC")->fetchAll();
 
-// 5. CONSTRUCCIÓN DE LA CONSULTA CON FILTROS DINÁMICOS
-// Construir SELECT dinámico según columnas disponibles
-$selectCols = [
-    't.id',
-    'g.nombre AS gerencia',
-    'a.nombre AS area',
-    't.actividad',
-    't.ubicacion',
-    't.fecha',
-    't.tipo_ats'
-];
+// ==========================================
+// CONFIGURACIÓN DE PAGINACIÓN LOGIC (CORREGIDO)
+// ==========================================
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
 
-if ($has_nivel_inicial && $has_nivel_final) {
-    $selectCols[] = 't.nivel_riesgo_inicial';
-    $selectCols[] = 't.nivel_riesgo_final';
-} else {
-    $selectCols[] = 't.nivel_riesgo';
-}
-
-$sqlTareas = "SELECT " . implode(', ', $selectCols) . " FROM tareas t
-              INNER JOIN gerencias g ON t.gerencia_id = g.id
-              INNER JOIN areas a ON t.area_id = a.id";
-
+// Construcción de condiciones comunes para conteo y consulta
 $conditions = [];
 $params = [];
 
@@ -131,14 +105,50 @@ if ($filtro_area > 0) {
     $params[] = $filtro_area;
 }
 
-if (!empty($conditions)) {
-    $sqlTareas .= " WHERE " . implode(" AND ", $conditions);
+$whereSQL = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
+
+// 1. Contar el total de registros bajo los filtros actuales
+$sqlCount = "SELECT COUNT(*) FROM tareas t" . $whereSQL;
+$stmtCount = $pdo->prepare($sqlCount);
+$stmtCount->execute($params);
+$total_registros = $stmtCount->fetchColumn();
+$total_paginas = ceil($total_registros / $registros_por_pagina);
+
+// 2. Obtener las columnas y registros limitados para la página actual
+$selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
+if ($has_nivel_inicial && $has_nivel_final) {
+    $selectCols[] = 't.nivel_riesgo_inicial';
+    $selectCols[] = 't.nivel_riesgo_final';
 }
 
-$sqlTareas .= " ORDER BY t.id DESC";
+$sqlTareas = "SELECT " . implode(', ', $selectCols) . " FROM tareas t
+              INNER JOIN gerencias g ON t.gerencia_id = g.id
+              INNER JOIN areas a ON t.area_id = a.id" 
+              . $whereSQL . 
+              " ORDER BY t.id DESC LIMIT ? OFFSET ?";
+
 $stmtTareas = $pdo->prepare($sqlTareas);
-$stmtTareas->execute($params);
+
+// Vinculamos primero los parámetros de los filtros dinámicos (Gerencia / Área)
+$idx = 1;
+foreach ($params as $param) {
+    $stmtTareas->bindValue($idx++, $param);
+}
+
+// Vinculamos estrictamente como enteros LIMIT y OFFSET para evitar que se ignoren
+$stmtTareas->bindValue($idx++, $registros_por_pagina, PDO::PARAM_INT);
+$stmtTareas->bindValue($idx, $offset, PDO::PARAM_INT);
+
+$stmtTareas->execute();
 $tareas = $stmtTareas->fetchAll();
+
+// Función auxiliar para mantener parámetros de filtros al cambiar de página
+function buildQueryString($page, $f_gerencia, $f_area) {
+    $query = ['pagina' => $page];
+    if ($f_gerencia > 0) $query['filtro_gerencia'] = $f_gerencia;
+    if ($f_area > 0) $query['filtro_area'] = $f_area;
+    return 'index.php?' . http_build_query($query);
+}
 ?>
 
 <!DOCTYPE html>
@@ -146,7 +156,7 @@ $tareas = $stmtTareas->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Tareas y ATS - Equinox Gold</title>
+    <title>ATS - Equinox Gold</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -156,43 +166,24 @@ $tareas = $stmtTareas->fetchAll();
             --eqx-dark: #1A1A1A;
             --eqx-light-dark: #2D2D2D;
         }
-
         body { background: linear-gradient(135deg, #f5f7fb 0%, #eef3f8 100%); font-size: 1.05rem; }
-
-        .navbar-eqx {
-            background: linear-gradient(90deg, var(--eqx-primary) 0%, #2f5873 100%);
-            border-bottom: 4px solid var(--eqx-accent);
-        }
+        .navbar-eqx { background: linear-gradient(90deg, var(--eqx-primary) 0%, #2f5873 100%); border-bottom: 4px solid var(--eqx-accent); }
         .navbar-brand { font-size: 1.35rem; }
         .navbar-logo { height: 38px; width: auto; }
-
-        .btn-gold {
-            background-color: var(--eqx-accent);
-            color: #000;
-            font-weight: 600;
-            font-size: 1.05rem;
-            border: none;
-        }
+        .btn-gold { background-color: var(--eqx-accent); color: #000; font-weight: 600; font-size: 1.05rem; border: none; }
         .btn-gold:hover { background-color: #c48f17; color: #000; }
-
-        .card-header-eqx {
-            background: linear-gradient(90deg, var(--eqx-primary) 0%, #2f5873 100%);
-            color: #fff;
-            border-left: 5px solid var(--eqx-accent);
-        }
+        .card-header-eqx { background: linear-gradient(90deg, var(--eqx-primary) 0%, #2f5873 100%); color: #fff; border-left: 5px solid var(--eqx-accent); }
         .card-header-eqx h5 { font-size: 1.25rem; }
-
-        .table th { font-size: 1.1rem; padding: 12px 8px; }
-        .table td { font-size: 1.05rem; padding: 12px 8px; }
-
+        .table th, .table td { font-size: 1.05rem; padding: 12px 8px; }
         .badge { font-size: 0.95rem; padding: 6px 10px; }
         .badge-bajo { background-color: #198754; color: #fff; }
         .badge-medio { background-color: #ffc107; color: #000; }
         .badge-alto { background-color: #fd7e14; color: #fff; }
         .badge-critico { background-color: #dc3545; color: #fff; }
-
-        .form-label { font-size: 1.1rem; }
-        .form-select, .form-control { font-size: 1.05rem; }
+        
+        /* Ajustes de paginación */
+        .pagination .page-link { color: var(--eqx-primary); }
+        .pagination .page-item.active .page-link { background-color: var(--eqx-primary); border-color: var(--eqx-primary); color: #fff; }
     </style>
 </head>
 <body>
@@ -201,13 +192,12 @@ $tareas = $stmtTareas->fetchAll();
     <div class="container-fluid">
         <a class="navbar-brand shadow-sm d-flex align-items-center" href="#">
             <img src="image/eqx.jpg" alt="Equinox Gold" class="navbar-logo me-2">
-            <span><strong>EQUINOX GOLD</strong> | Panel de Tareas y ATS</span>
+            <span><strong>EQUINOX GOLD</strong> | Panel de ATS</span>
         </a>
     </div>
 </nav>
 
 <div class="container-fluid px-4">
-    
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="text-secondary mb-0"><i class="fa-solid fa-list-check me-2"></i>Monitoreo de Actividades</h3>
         <button class="btn btn-gold shadow-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#modalAgregarTarea">
@@ -249,7 +239,7 @@ $tareas = $stmtTareas->fetchAll();
         </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm mb-4">
         <div class="card-header card-header-eqx py-3">
             <h5 class="mb-0"><i class="fa-solid fa-table me-2"></i>Tareas en Sitio</h5>
         </div>
@@ -265,14 +255,24 @@ $tareas = $stmtTareas->fetchAll();
                             <th>Nivel de Riesgo</th>
                             <th>Ubicación</th>
                             <th>Fecha</th>
-                            <th>Tipo de ATS</th>
+                            <th>Permisos Requeridos</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (count($tareas) > 0): ?>
                             <?php foreach ($tareas as $tarea): 
-                                $riesgoTexto = htmlspecialchars($tarea['nivel_riesgo']);
-                                $riesgoLower = strtolower($tarea['nivel_riesgo']);
+                                $riesgoInicial = trim($tarea['nivel_riesgo_inicial'] ?? '');
+                                $riesgoFinal = trim($tarea['nivel_riesgo_final'] ?? '');
+                                $riesgoTexto = '';
+                                $riesgoLower = '';
+
+                                if ($riesgoInicial !== '' || $riesgoFinal !== '') {
+                                    $riesgoTexto = htmlspecialchars(trim($riesgoInicial . ($riesgoFinal !== '' ? ' / ' . $riesgoFinal : '')));
+                                    $riesgoLower = strtolower($riesgoInicial ?: $riesgoFinal);
+                                } else {
+                                    $riesgoTexto = htmlspecialchars($tarea['nivel_riesgo'] ?? '');
+                                    $riesgoLower = strtolower($tarea['nivel_riesgo'] ?? '');
+                                }
                                 $badgeClass = 'badge-bajo';
 
                                 if (strpos($riesgoLower, 'extremo') !== false) {
@@ -291,7 +291,27 @@ $tareas = $stmtTareas->fetchAll();
                                     <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $riesgoTexto; ?></span></td>
                                     <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
                                     <td><?php echo $tarea['fecha']; ?></td>
-                                    <td><?php echo htmlspecialchars($tarea['tipo_ats']); ?></td>
+                                    <td>
+                                        <?php
+                                        $permisos = [];
+                                        if (!empty($tarea['permisos_requeridos'])) {
+                                            $decoded = json_decode($tarea['permisos_requeridos'], true);
+                                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                                $permisos = $decoded;
+                                            } else {
+                                                $permisos = array_filter(array_map('trim', explode(',', $tarea['permisos_requeridos'])));
+                                            }
+                                        }
+                                        if (count($permisos) > 0) {
+                                            foreach ($permisos as $perm) {
+                                                $bgStyle = ($perm === 'No se requiere permiso') ? 'bg-light text-dark border border-secondary-subtle' : 'bg-secondary';
+                                                echo '<span class="badge ' . $bgStyle . ' me-1 mb-1">' . htmlspecialchars($perm) . '</span>';
+                                            }
+                                        } else {
+                                            echo '<span class="text-muted small">Sin permisos</span>';
+                                        }
+                                        ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
@@ -301,6 +321,37 @@ $tareas = $stmtTareas->fetchAll();
                 </table>
             </div>
         </div>
+        
+        <?php if ($total_paginas > 1): ?>
+            <div class="card-footer d-flex justify-content-between align-items-center bg-white py-3 border-top">
+                <div class="text-muted small">
+                    Mostrando página <strong><?php echo $pagina_actual; ?></strong> de <strong><?php echo $total_paginas; ?></strong> (Total de <?php echo $total_registros; ?> registros)
+                </div>
+                <nav aria-label="Navegación de tareas">
+                    <ul class="pagination pagination-sm mb-0 shadow-sm">
+                        <li class="page-item <?php echo ($pagina_actual <= 1) ? 'disabled' : ''; ?>">
+                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual - 1, $filtro_gerencia, $filtro_area); ?>" aria-label="Previous">
+                                <span aria-hidden="true">&laquo; Ant</span>
+                            </a>
+                        </li>
+
+                        <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
+                            <li class="page-item <?php echo ($pagina_actual === $i) ? 'active' : ''; ?>">
+                                <a class="page-link" href="<?php echo buildQueryString($i, $filtro_gerencia, $filtro_area); ?>">
+                                    <?php echo $i; ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+
+                        <li class="page-item <?php echo ($pagina_actual >= $total_paginas) ? 'disabled' : ''; ?>">
+                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual + 1, $filtro_gerencia, $filtro_area); ?>" aria-label="Next">
+                                <span aria-hidden="true">Sig &raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -309,47 +360,36 @@ $tareas = $stmtTareas->fetchAll();
         <div class="modal-content">
             <div class="modal-header text-white" style="background-color: var(--eqx-primary); border-bottom: 3px solid var(--eqx-accent);">
                 <h5 class="modal-title" id="modalAgregarTareaLabel"><i class="fa-solid fa-file-medical me-2"></i>Nuevo Registro de Tarea / ATS</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="window.location.href='index.php'"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             
             <form action="index.php?action=guardar" method="POST">
                 <div class="modal-body row g-3">
-                    
                     <div class="col-md-6">
                         <label for="gerencia_id" class="form-label"><strong>Gerencia</strong></label>
-                        <select class="form-select" id="gerencia_id" name="gerencia_id" required onchange="this.form.action='index.php'; this.form.submit();">
+                        <select class="form-select" id="gerencia_id" name="gerencia_id" required>
                             <option value="" selected disabled>Seleccione Gerencia...</option>
                             <?php foreach ($gerencias as $g): ?>
-                                <option value="<?php echo $g['id']; ?>" <?php echo ($g['id'] == $gerencia_seleccionada) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($g['nombre']); ?>
-                                </option>
+                                <option value="<?php echo $g['id']; ?>"><?php echo htmlspecialchars($g['nombre']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="col-md-6">
                         <label for="area_id" class="form-label"><strong>Área</strong></label>
-                        <select class="form-select" id="area_id" name="area_id" required <?php echo empty($areas_filtradas) ? 'disabled' : ''; ?>>
-                            <?php if (empty($areas_filtradas)): ?>
-                                <option value="" selected disabled>Seleccione primero una gerencia...</option>
-                            <?php else: ?>
-                                <option value="" selected disabled>Seleccione Área...</option>
-                                <?php foreach ($areas_filtradas as $a): ?>
-                                    <option value="<?php echo $a['id']; ?>"><?php echo htmlspecialchars($a['nombre']); ?></option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                        <select class="form-select" id="area_id" name="area_id" required disabled>
+                            <option value="" selected disabled>Seleccione primero una gerencia...</option>
                         </select>
                     </div>
-                   
 
                     <div class="col-md-6">
                         <label for="nivel_riesgo_inicial" class="form-label"><strong>Nivel de Riesgo Inicial</strong></label>
                         <select class="form-select" id="nivel_riesgo_inicial" name="nivel_riesgo_inicial" required>
                             <option value="" selected disabled>Seleccione una opción...</option>
-                            <option value="Bajo" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Bajo') ? 'selected' : ''; ?>>Bajo 1-5</option>
-                            <option value="Moderado" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Moderado') ? 'selected' : ''; ?>>Moderado 6-10</option>
-                            <option value="Alto" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Alto') ? 'selected' : ''; ?>>Alto 11-17</option>
-                            <option value="Extremo" <?php echo (isset($_POST['nivel_riesgo_inicial']) && $_POST['nivel_riesgo_inicial'] == 'Extremo') ? 'selected' : ''; ?>>Extremo 18-25</option>
+                            <option value="Bajo">Bajo 1-5</option>
+                            <option value="Moderado">Moderado 6-10</option>
+                            <option value="Alto">Alto 11-17</option>
+                            <option value="Extremo">Extremo 18-25</option>
                         </select>
                     </div>
 
@@ -357,37 +397,53 @@ $tareas = $stmtTareas->fetchAll();
                         <label for="nivel_riesgo_final" class="form-label"><strong>Nivel de Riesgo Final</strong></label>
                         <select class="form-select" id="nivel_riesgo_final" name="nivel_riesgo_final" required>
                             <option value="" selected disabled>Seleccione una opción...</option>
-                            <option value="Bajo" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Bajo') ? 'selected' : ''; ?>>Bajo 1-5</option>
-                            <option value="Moderado" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Moderado') ? 'selected' : ''; ?>>Moderado 6-10</option>
-                            <option value="Alto" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Alto') ? 'selected' : ''; ?>>Alto 11-17</option>
-                            <option value="Extremo" <?php echo (isset($_POST['nivel_riesgo_final']) && $_POST['nivel_riesgo_final'] == 'Extremo') ? 'selected' : ''; ?>>Extremo 18-25</option>
+                            <option value="Bajo">Bajo 1-5</option>
+                            <option value="Moderado">Moderado 6-10</option>
+                            <option value="Alto">Alto 11-17</option>
+                            <option value="Extremo">Extremo 18-25</option>
                         </select>
                     </div>
 
- 
                     <div class="col-md-6">
                         <label for="ubicacion" class="form-label"><strong>Ubicación Específica</strong></label>
-                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="<?php echo htmlspecialchars($_POST['ubicacion'] ?? ''); ?>" placeholder="Ej: Banco 240, Stockpile" required>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ej: Banco 240, Stockpile" required>
                     </div>
 
                     <div class="col-md-6">
                         <label for="fecha" class="form-label"><strong>Fecha</strong></label>
-                        <input type="date" class="form-control" id="fecha" name="fecha" value="<?php echo htmlspecialchars($_POST['fecha'] ?? date('Y-m-d')); ?>" required>
+                        <input type="date" class="form-control" id="fecha" name="fecha" value="<?php echo date('Y-m-d'); ?>" required>
                     </div>
 
-                    <div class="col-md-6">
-                        <label for="tipo_ats" class="form-label"><strong>Tipo de ATS</strong></label>
-                        <input type="text" class="form-control" id="tipo_ats" name="tipo_ats" value="<?php echo htmlspecialchars($_POST['tipo_ats'] ?? ''); ?>" placeholder="Ej: ATS-01 Trabajo en Caliente" required>
+                    <div class="col-md-12">
+                        <label class="form-label"><strong>Permisos Requeridos</strong></label>
+                        <div class="p-3 rounded border bg-white">
+                            <?php
+                                $opcionesPermisos = [
+                                    'No se requiere permiso',
+                                    'Espacio Confinado',
+                                    'Trabajo en Caliente',
+                                    'Trabajo en Altura',
+                                    'Excavación',
+                                    'Aislamiento en grupo',
+                                    'Izaje de carga'
+                                ];
+                                foreach ($opcionesPermisos as $permiso) {
+                            ?>
+                                <div class="form-check form-check-inline me-3 mb-2">
+                                    <input class="form-check-input permiso-checkbox" type="checkbox" name="permisos_requeridos[]" id="permiso_<?php echo md5($permiso); ?>" value="<?php echo htmlspecialchars($permiso); ?>">
+                                    <label class="form-check-label" for="permiso_<?php echo md5($permiso); ?>"><?php echo htmlspecialchars($permiso); ?></label>
+                                </div>
+                            <?php } ?>
+                        </div>
                     </div>
 
                     <div class="col-md-12">
                         <label for="actividad" class="form-label"><strong>Actividad (Descripción del Trabajo)</strong></label>
-                        <textarea class="form-control" id="actividad" name="actividad" rows="3" placeholder="Describa la tarea..." required><?php echo htmlspecialchars($_POST['actividad'] ?? ''); ?></textarea>
+                        <textarea class="form-control" id="actividad" name="actividad" rows="3" placeholder="Describa la tarea..." required></textarea>
                     </div>
-
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary text-lg" data-bs-dismiss="modal" onclick="window.location.href='index.php'">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-gold"><i class="fa-solid fa-floppy-disk me-1"></i> Guardar Registro</button>
                 </div>
             </form>
@@ -396,13 +452,49 @@ $tareas = $stmtTareas->fetchAll();
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<?php if ($abrir_modal): ?>
 <script>
-    const modal = new bootstrap.Modal(document.getElementById('modalAgregarTarea'));
-    modal.show();
-</script>
-<?php endif; ?>
+    document.getElementById('gerencia_id').addEventListener('change', function() {
+        const gerenciaId = this.value;
+        const selectArea = document.getElementById('area_id');
+        
+        selectArea.innerHTML = '<option value="" selected disabled>Cargando áreas...</option>';
+        selectArea.disabled = true;
 
+        if(gerenciaId > 0) {
+            fetch(`procesar.php?action=get_areas_por_gerencia&gerencia_id=${gerenciaId}`)
+                .then(response => response.json())
+                .then(res => {
+                    if(res.status === 'success') {
+                        selectArea.innerHTML = '<option value="" selected disabled>Seleccione Área...</option>';
+                        res.data.forEach(area => {
+                            selectArea.innerHTML += `<option value="${area.id}">${area.nombre}</option>`;
+                        });
+                        selectArea.disabled = false;
+                    } else {
+                        selectArea.innerHTML = '<option value="" selected disabled>Error al cargar áreas</option>';
+                    }
+                })
+                .catch(() => {
+                    selectArea.innerHTML = '<option value="" selected disabled>Error de red</option>';
+                });
+        }
+    });
+
+    const permisoCheckboxes = document.querySelectorAll('.permiso-checkbox');
+    const hashNoPermiso = "<?php echo md5('No se requiere permiso'); ?>";
+    
+    permisoCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const noneCheckbox = document.querySelector(`#permiso_${hashNoPermiso}`);
+            if (checkbox.value === 'No se requiere permiso' && checkbox.checked) {
+                permisoCheckboxes.forEach(cb => {
+                    if (cb !== checkbox) cb.checked = false;
+                });
+            } else if (checkbox.value !== 'No se requiere permiso' && checkbox.checked) {
+                if (noneCheckbox) noneCheckbox.checked = false;
+            }
+        });
+    });
+</script>
 </body>
 </html>

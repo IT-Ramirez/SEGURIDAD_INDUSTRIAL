@@ -23,10 +23,19 @@ $has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
 
 $action = $_GET['action'] ?? '';
 
-// 1. Listar todas las tareas (con INNER JOIN para traer los nombres de gerencia y área)
+// 1. Listar tareas con soporte de paginación opcional en la API
 if ($action === 'listar') {
     try {
-        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.tipo_ats'];
+        // Paginación dinámica por parámetros GET
+        $limite = isset($_GET['limite']) ? intval($_GET['limite']) : 10;
+        $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
+        $offset = ($pagina - 1) * $limite;
+
+        // Conteo total para metadatos de la API
+        $total_items = $pdo->query("SELECT COUNT(*) FROM tareas")->fetchColumn();
+        $total_paginas = ceil($total_items / $limite);
+
+        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos'];
         if ($has_nivel_inicial && $has_nivel_final) {
             $cols[] = 't.nivel_riesgo_inicial';
             $cols[] = 't.nivel_riesgo_final';
@@ -37,16 +46,26 @@ if ($action === 'listar') {
         $sql = "SELECT " . implode(', ', $cols) . " FROM tareas t
                 INNER JOIN gerencias g ON t.gerencia_id = g.id
                 INNER JOIN areas a ON t.area_id = a.id
-                ORDER BY t.id DESC";
+                ORDER BY t.id DESC LIMIT $limite OFFSET $offset";
+                
         $stmt = $pdo->query($sql);
-        echo json_encode(["status" => "success", "data" => $stmt->fetchAll()]);
+        
+        echo json_encode([
+            "status" => "success", 
+            "paginacion" => [
+                "total_registros" => (int)$total_items,
+                "paginas_totales" => (int)$total_paginas,
+                "pagina_actual" => $pagina,
+                "limite_por_pagina" => $limite
+            ],
+            "data" => $stmt->fetchAll()
+        ]);
     } catch (Exception $e) {
         echo json_encode(["status" => "error", "message" => $e->getMessage()]);
     }
     exit;
 }
 
-// 2. Obtener todas las gerencias (para cargar el select principal)
 if ($action === 'get_gerencias') {
     try {
         $stmt = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC");
@@ -57,7 +76,6 @@ if ($action === 'get_gerencias') {
     exit;
 }
 
-// 3. Obtener áreas filtradas por el ID de la gerencia seleccionada
 if ($action === 'get_areas_por_gerencia') {
     $gerencia_id = $_GET['gerencia_id'] ?? 0;
     try {
@@ -70,7 +88,6 @@ if ($action === 'get_areas_por_gerencia') {
     exit;
 }
 
-// 4. Guardar una nueva tarea vinculando los IDs correspondientes
 if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $nivel_riesgo_inicial = trim($_POST['nivel_riesgo_inicial'] ?? '');
     $nivel_riesgo_final = trim($_POST['nivel_riesgo_final'] ?? '');
@@ -78,16 +95,22 @@ if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (
         empty($_POST['gerencia_id']) || empty($_POST['area_id']) || 
         empty($_POST['ubicacion']) || empty($nivel_riesgo_inicial) || empty($nivel_riesgo_final) ||
-        empty($_POST['fecha']) || empty($_POST['tipo_ats']) || empty($_POST['actividad'])
+        empty($_POST['fecha']) || empty($_POST['actividad'])
     ) {
         echo json_encode(["status" => "error", "message" => "Todos los campos son obligatorios."]);
         exit;
     }
 
+    $permisos_requeridos = $_POST['permisos_requeridos'] ?? [];
+    if (!is_array($permisos_requeridos)) {
+        $permisos_requeridos = [$permisos_requeridos];
+    }
+    $permisos_requeridos_json = json_encode(array_values($permisos_requeridos), JSON_UNESCAPED_UNICODE);
+
     try {
         if ($has_nivel_inicial && $has_nivel_final) {
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, fecha, tipo_ats, actividad)
-                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :fecha, :tipo_ats, :actividad)";
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, nivel_riesgo, fecha, permisos_requeridos, actividad)
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':gerencia_id' => $_POST['gerencia_id'],
@@ -95,14 +118,15 @@ if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':ubicacion' => $_POST['ubicacion'],
                 ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
                 ':nivel_riesgo_final' => $nivel_riesgo_final,
+                ':nivel_riesgo' => '',
                 ':fecha' => $_POST['fecha'],
-                ':tipo_ats' => $_POST['tipo_ats'],
+                ':permisos_requeridos' => $permisos_requeridos_json,
                 ':actividad' => $_POST['actividad']
             ]);
         } else {
             $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, tipo_ats, actividad) 
-                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :tipo_ats, :actividad)";
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, permisos_requeridos, actividad) 
+                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
@@ -111,7 +135,7 @@ if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':ubicacion'    => $_POST['ubicacion'],
                 ':nivel_riesgo' => $nivel_riesgo,
                 ':fecha'        => $_POST['fecha'],
-                ':tipo_ats'     => $_POST['tipo_ats'],
+                ':permisos_requeridos' => $permisos_requeridos_json,
                 ':actividad'    => $_POST['actividad']
             ]);
         }
