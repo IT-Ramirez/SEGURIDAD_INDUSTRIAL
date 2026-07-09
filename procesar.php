@@ -2,8 +2,8 @@
 header('Content-Type: application/json');
 
 $host = "localhost";
-$user = "root";       
-$password = "Tecnologias11-11";       
+$user = "usreqxApp";
+$password = "Fhj09y6mqDF#z7v";
 $database = "equinox_gold";
 
 try {
