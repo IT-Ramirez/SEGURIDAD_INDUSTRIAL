@@ -573,7 +573,8 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                     this.value = previousValue;
                     alert(res.message || 'No se pudo actualizar el estado.');
                 } else {
-                    this.dataset.currentValue = estado;
+                    const estadoNormalizado = (estado === 'finalizado' || estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
+                    actualizarEstadoUI(this, estadoNormalizado);
                 }
             })
             .catch(() => {
@@ -590,21 +591,25 @@ function buildQueryString($page, $f_gerencia, $f_area) {
         filtro_area: <?php echo $filtro_area; ?>
     };
 
+    function actualizarEstadoUI(select, estadoNormalizado) {
+        select.value = estadoNormalizado;
+        select.dataset.currentValue = estadoNormalizado;
+
+        const badge = select.closest('td').querySelector('.badge');
+        if (badge) {
+            badge.textContent = estadoNormalizado;
+            badge.classList.toggle('badge-finalizado', estadoNormalizado === 'Finalizado');
+            badge.classList.toggle('badge-en-desarrollo', estadoNormalizado !== 'Finalizado');
+        }
+    }
+
     function actualizarEstadosEnTabla(estados) {
         estados.forEach(item => {
             const select = document.querySelector(`.estado-select[data-id="${item.id}"]`);
             if (!select) return;
 
             const estadoNormalizado = (item.estado === 'finalizado' || item.estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
-            if (select.value === estadoNormalizado) return;
-
-            select.value = estadoNormalizado;
-            const badge = select.closest('td').querySelector('.badge');
-            if (badge) {
-                badge.textContent = estadoNormalizado;
-                badge.classList.toggle('badge-finalizado', estadoNormalizado === 'Finalizado');
-                badge.classList.toggle('badge-en-desarrollo', estadoNormalizado !== 'Finalizado');
-            }
+            actualizarEstadoUI(select, estadoNormalizado);
         });
     }
 
