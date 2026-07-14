@@ -17,6 +17,8 @@ $stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicia
 $has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
 $stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
 $has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
+$stmtEstadoCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'estado'");
+$has_estado = ($stmtEstadoCol && $stmtEstadoCol->fetch() !== false);
 
 $action = $_GET['action'] ?? '';
 
@@ -25,10 +27,17 @@ if ($action === 'actualizar_estado' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = intval($_POST['id'] ?? 0);
     $nuevo_estado = trim($_POST['estado'] ?? '');
 
-    if ($id > 0 && ($nuevo_estado === 'En desarrollo' || $nuevo_estado === 'finalizado')) {
+    if (!$has_estado) {
+        echo json_encode(["status" => "error", "message" => "La columna de estado no está disponible en la base de datos."]);
+        exit;
+    }
+
+    if ($id > 0 && ($nuevo_estado === 'En desarrollo' || $nuevo_estado === 'Finalizado' || $nuevo_estado === 'finalizado')) {
+        $estado_guardado = ($nuevo_estado === 'Finalizado' || $nuevo_estado === 'finalizado') ? 'finalizado' : 'En desarrollo';
+
         try {
             $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ?");
-            $stmt->execute([$nuevo_estado, $id]);
+            $stmt->execute([$estado_guardado, $id]);
             echo json_encode(["status" => "success", "message" => "Estado actualizado correctamente."]);
         } catch (Exception $e) {
             echo json_encode(["status" => "error", "message" => "Error al actualizar: " . $e->getMessage()]);
@@ -49,8 +58,10 @@ if ($action === 'listar') {
         $total_items = $pdo->query("SELECT COUNT(*) FROM tareas")->fetchColumn();
         $total_paginas = ceil($total_items / $limite);
 
-        // Se agrega t.estado
-        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos', 't.estado'];
+        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos'];
+        if ($has_estado) {
+            $cols[] = 't.estado';
+        }
         if ($has_nivel_inicial && $has_nivel_final) {
             $cols[] = 't.nivel_riesgo_inicial';
             $cols[] = 't.nivel_riesgo_final';
@@ -122,15 +133,12 @@ if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $permisos_requeridos_json = json_encode(array_values($permisos_requeridos), JSON_UNESCAPED_UNICODE);
 
-    // Estado inicial obligatorio
     $estado_inicial = "En desarrollo";
 
     try {
         if ($has_nivel_inicial && $has_nivel_final) {
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, nivel_riesgo, fecha, permisos_requeridos, actividad, estado)
-                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, nivel_riesgo, fecha, permisos_requeridos, actividad";
+            $params = [
                 ':gerencia_id' => $_POST['gerencia_id'],
                 ':area_id' => $_POST['area_id'],
                 ':ubicacion' => $_POST['ubicacion'],
@@ -139,25 +147,40 @@ if ($action === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':nivel_riesgo' => '',
                 ':fecha' => $_POST['fecha'],
                 ':permisos_requeridos' => $permisos_requeridos_json,
-                ':actividad' => $_POST['actividad'],
-                ':estado' => $estado_inicial
-            ]);
+                ':actividad' => $_POST['actividad']
+            ];
+
+            if ($has_estado) {
+                $sql .= ", estado) VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
+                $params[':estado'] = $estado_inicial;
+            } else {
+                $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
+            }
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
         } else {
             $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, permisos_requeridos, actividad, estado) 
-                    VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
-            
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
+            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, permisos_requeridos, actividad";
+            $params = [
                 ':gerencia_id'  => $_POST['gerencia_id'],
                 ':area_id'      => $_POST['area_id'],
                 ':ubicacion'    => $_POST['ubicacion'],
                 ':nivel_riesgo' => $nivel_riesgo,
                 ':fecha'        => $_POST['fecha'],
                 ':permisos_requeridos' => $permisos_requeridos_json,
-                ':actividad'    => $_POST['actividad'],
-                ':estado'       => $estado_inicial
-            ]);
+                ':actividad'    => $_POST['actividad']
+            ];
+
+            if ($has_estado) {
+                $sql .= ", estado) VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
+                $params[':estado'] = $estado_inicial;
+            } else {
+                $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
+            }
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
         }
 
         echo json_encode(["status" => "success", "message" => "Registro guardado correctamente."]);
