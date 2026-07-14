@@ -553,10 +553,12 @@ function buildQueryString($page, $f_gerencia, $f_area) {
     });
 
     document.querySelectorAll('.estado-select').forEach(select => {
+        select.dataset.currentValue = select.value;
+
         select.addEventListener('change', function () {
             const id = this.dataset.id;
             const estado = this.value;
-            const previousValue = this.value;
+            const previousValue = this.dataset.currentValue;
 
             fetch('procesar.php?action=actualizar_estado', {
                 method: 'POST',
@@ -570,6 +572,8 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                 if (res.status !== 'success') {
                     this.value = previousValue;
                     alert(res.message || 'No se pudo actualizar el estado.');
+                } else {
+                    this.dataset.currentValue = estado;
                 }
             })
             .catch(() => {
@@ -579,13 +583,54 @@ function buildQueryString($page, $f_gerencia, $f_area) {
         });
     });
 
-    // Refresca automáticamente la página cada 30 segundos,
-    // pero no cuando el modal de registro está abierto.
-    setInterval(() => {
-        if (!document.querySelector('.modal.show')) {
-            window.location.reload();
-        }
-    }, 30000);
+    const autoUpdateConfig = {
+        pagina: <?php echo $pagina_actual; ?>,
+        limite: <?php echo $registros_por_pagina; ?>,
+        filtro_gerencia: <?php echo $filtro_gerencia; ?>,
+        filtro_area: <?php echo $filtro_area; ?>
+    };
+
+    function actualizarEstadosEnTabla(estados) {
+        estados.forEach(item => {
+            const select = document.querySelector(`.estado-select[data-id="${item.id}"]`);
+            if (!select) return;
+
+            const estadoNormalizado = (item.estado === 'finalizado' || item.estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
+            if (select.value === estadoNormalizado) return;
+
+            select.value = estadoNormalizado;
+            const badge = select.closest('td').querySelector('.badge');
+            if (badge) {
+                badge.textContent = estadoNormalizado;
+                badge.classList.toggle('badge-finalizado', estadoNormalizado === 'Finalizado');
+                badge.classList.toggle('badge-en-desarrollo', estadoNormalizado !== 'Finalizado');
+            }
+        });
+    }
+
+    function fetchLatestEstados() {
+        const query = new URLSearchParams({
+            action: 'estados',
+            pagina: autoUpdateConfig.pagina,
+            limite: autoUpdateConfig.limite,
+            filtro_gerencia: autoUpdateConfig.filtro_gerencia,
+            filtro_area: autoUpdateConfig.filtro_area
+        });
+
+        fetch(`procesar.php?${query.toString()}`)
+            .then(response => response.json())
+            .then(res => {
+                if (res.status === 'success' && Array.isArray(res.data)) {
+                    actualizarEstadosEnTabla(res.data);
+                }
+            })
+            .catch(() => {
+                // Ignorar errores de red temporales
+            });
+    }
+
+    fetchLatestEstados();
+    setInterval(fetchLatestEstados, 3000);
 </script>
 </body>
 </html>

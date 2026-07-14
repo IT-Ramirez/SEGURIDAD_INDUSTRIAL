@@ -92,6 +92,45 @@ if ($action === 'listar') {
     exit;
 }
 
+if ($action === 'estados') {
+    if (!$has_estado) {
+        echo json_encode(["status" => "error", "message" => "La columna de estado no está disponible en la base de datos."]);
+        exit;
+    }
+
+    try {
+        $limite = isset($_GET['limite']) ? intval($_GET['limite']) : 10;
+        $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
+        $offset = ($pagina - 1) * $limite;
+
+        $conditions = [];
+        $params = [];
+        if (isset($_GET['filtro_gerencia']) && intval($_GET['filtro_gerencia']) > 0) {
+            $conditions[] = 't.gerencia_id = ?';
+            $params[] = intval($_GET['filtro_gerencia']);
+        }
+        if (isset($_GET['filtro_area']) && intval($_GET['filtro_area']) > 0) {
+            $conditions[] = 't.area_id = ?';
+            $params[] = intval($_GET['filtro_area']);
+        }
+
+        $whereSQL = !empty($conditions) ? ' WHERE ' . implode(' AND ', $conditions) : '';
+        $sql = "SELECT t.id, t.estado FROM tareas t
+                INNER JOIN gerencias g ON t.gerencia_id = g.id
+                INNER JOIN areas a ON t.area_id = a.id
+                $whereSQL
+                ORDER BY t.id DESC LIMIT $limite OFFSET $offset";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        echo json_encode(["status" => "success", "data" => $stmt->fetchAll()]);
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    }
+    exit;
+}
+
 if ($action === 'get_gerencias') {
     try {
         $stmt = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC");
