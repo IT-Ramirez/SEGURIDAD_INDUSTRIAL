@@ -578,6 +578,14 @@ function buildQueryString($page, $f_gerencia, $f_area) {
             });
         });
     });
+
+    // Refresca automáticamente la página cada 30 segundos,
+    // pero no cuando el modal de registro está abierto.
+    setInterval(() => {
+        if (!document.querySelector('.modal.show')) {
+            window.location.reload();
+        }
+    }, 30000);
 </script>
 </body>
 </html>
