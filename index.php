@@ -253,6 +253,7 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                             <th>Ubicación</th>
                             <th>Fecha</th>
                             <th>Permisos Requeridos</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -284,7 +285,7 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                                     <td><?php echo htmlspecialchars($tarea['gerencia']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['area']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['actividad']); ?></td>
-                                    
+                                    <td><?php echo htmlspecialchars($tarea['estado']); ?></td>
                                     <td>
                                         <?php if ($riesgoInicial !== ''): ?>
                                             <span class="badge <?php echo $getBadgeClass($riesgoInicial); ?>"><?php echo htmlspecialchars($riesgoInicial); ?></span>
@@ -327,7 +328,7 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <tr><td colspan="9" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>
+                            <tr><td colspan="10" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
