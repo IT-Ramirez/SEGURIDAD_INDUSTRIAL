@@ -13,6 +13,7 @@ try {
 // Variables de control para los Filtros de la Tabla Principal
 $filtro_gerencia = isset($_GET['filtro_gerencia']) ? intval($_GET['filtro_gerencia']) : 0;
 $filtro_area = isset($_GET['filtro_area']) ? intval($_GET['filtro_area']) : 0;
+$filtro_estado = isset($_GET['filtro_estado']) ? trim($_GET['filtro_estado']) : '';
 $areas_filtro_tabla = [];
 
 if ($filtro_gerencia > 0) {
@@ -120,6 +121,13 @@ if ($filtro_area > 0) {
     $conditions[] = "t.area_id = ?";
     $params[] = $filtro_area;
 }
+if ($has_estado && $filtro_estado !== '') {
+    $allowedEstados = ['En desarrollo', 'Finalizado'];
+    if (in_array($filtro_estado, $allowedEstados, true)) {
+        $conditions[] = "t.estado = ?";
+        $params[] = $filtro_estado;
+    }
+}
 
 $whereSQL = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
 
@@ -162,10 +170,11 @@ $stmtTareas->execute();
 $tareas = $stmtTareas->fetchAll();
 
 // Función auxiliar para mantener parámetros de filtros al cambiar de página
-function buildQueryString($page, $f_gerencia, $f_area) {
+function buildQueryString($page, $f_gerencia, $f_area, $f_estado) {
     $query = ['pagina' => $page];
     if ($f_gerencia > 0) $query['filtro_gerencia'] = $f_gerencia;
     if ($f_area > 0) $query['filtro_area'] = $f_area;
+    if ($f_estado !== '') $query['filtro_estado'] = $f_estado;
     return 'index.php?' . http_build_query($query);
 }
 ?>
@@ -241,7 +250,7 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="filtro_area" class="form-label"><strong>Filtrar por Área:</strong></label>
                     <select class="form-select" id="filtro_area" name="filtro_area" onchange="this.form.submit();" <?php echo empty($areas_filtro_tabla) ? 'disabled' : ''; ?>>
                         <option value="0">--- Todas las Áreas ---</option>
@@ -252,8 +261,16 @@ function buildQueryString($page, $f_gerencia, $f_area) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <?php if ($filtro_gerencia > 0 || $filtro_area > 0): ?>
+                <div class="col-md-3">
+                    <label for="filtro_estado" class="form-label"><strong>Filtrar por Estado:</strong></label>
+                    <select class="form-select" id="filtro_estado" name="filtro_estado" onchange="this.form.submit();">
+                        <option value="">--- Todos los Estados ---</option>
+                        <option value="En desarrollo" <?php echo ($filtro_estado === 'En desarrollo') ? 'selected' : ''; ?>>En desarrollo</option>
+                        <option value="Finalizado" <?php echo ($filtro_estado === 'Finalizado') ? 'selected' : ''; ?>>Finalizado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <?php if ($filtro_gerencia > 0 || $filtro_area > 0 || $filtro_estado !== ''): ?>
                         <a href="index.php" class="btn btn-secondary w-100 py-2"><i class="fa-solid fa-filter-circle-xmark me-1"></i> Limpiar Filtros</a>
                     <?php endif; ?>
                 </div>
