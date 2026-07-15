@@ -125,7 +125,6 @@ include 'controller_ats.php';
                     <tbody>
                         <?php if (count($tareas) > 0): ?>
                             <?php 
-                            // Función auxiliar para modularizar y reutilizar las clases de color de los niveles de riesgo
                             $getBadgeClass = function($riesgo) {
                                 $lower = mb_strtolower($riesgo, 'UTF-8');
                                 if (strpos($lower, 'extremo') !== false) return 'badge-critico';
@@ -139,7 +138,6 @@ include 'controller_ats.php';
                                 $riesgoInicial = trim($tarea['nivel_riesgo_inicial'] ?? '');
                                 $riesgoFinal = trim($tarea['nivel_riesgo_final'] ?? '');
 
-                                // Si la base no cuenta con los campos independientes, procesamos el campo mixto 'nivel_riesgo'
                                 if ($riesgoInicial === '' && $riesgoFinal === '') {
                                     $partes = explode('/', $tarea['nivel_riesgo'] ?? '');
                                     $riesgoInicial = trim($partes[0] ?? '');
@@ -251,6 +249,7 @@ include 'controller_ats.php';
     </div>
 </div>
 
+<!-- MODAL AGREGAR TAREA -->
 <div class="modal fade" id="modalAgregarTarea" tabindex="-1" aria-labelledby="modalAgregarTareaLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -349,26 +348,24 @@ include 'controller_ats.php';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // Corrección crítica en la asignación de la configuración de auto-update para evitar romper JS cuando PHP devuelve vacío/null.
+    const autoUpdateConfig = {
+        pagina: parseInt("<?php echo !empty($pagina_actual) ? $pagina_actual : 1; ?>") || 1,
+        limite: parseInt("<?php echo !empty($registros_por_pagina) ? $registros_por_pagina : 10; ?>") || 10,
+        filtro_gerencia: parseInt("<?php echo !empty($filtro_gerencia) ? $filtro_gerencia : 0; ?>") || 0,
+        filtro_area: parseInt("<?php echo !empty($filtro_area) ? $filtro_area : 0; ?>") || 0
+    };
+
     const formularioAgregarTarea = document.getElementById('formAgregarTarea');
     const modalAgregarTareaElement = document.getElementById('modalAgregarTarea');
     const modalRegistroExitoElement = document.getElementById('modalRegistroExito');
     const modalRegistroExitoMensaje = document.getElementById('modalRegistroExitoMensaje');
 
-    const modalAgregarTarea = (modalAgregarTareaElement && window.bootstrap && bootstrap.Modal)
-        ? bootstrap.Modal.getOrCreateInstance(modalAgregarTareaElement)
-        : null;
-    const modalRegistroExito = (modalRegistroExitoElement && window.bootstrap && bootstrap.Modal)
-        ? bootstrap.Modal.getOrCreateInstance(modalRegistroExitoElement)
-        : null;
-
-    document.querySelectorAll('[data-bs-target="#modalAgregarTarea"]').forEach(button => {
-        button.addEventListener('click', function (event) {
-            event.preventDefault();
-            if (modalAgregarTarea) {
-                modalAgregarTarea.show();
-            }
-        });
-    });
+    // Inicialización segura del Modal usando Bootstrap 5 nativo.
+    // Nota: El botón de "Agregar Registro" ya cuenta con data-bs-toggle="modal" y data-bs-target="#modalAgregarTarea",
+    // por lo que Bootstrap lo abrirá automáticamente de forma nativa sin necesidad de forzar los eventos 'click' manualmente.
+    const modalAgregarTarea = modalAgregarTareaElement ? bootstrap.Modal.getOrCreateInstance(modalAgregarTareaElement) : null;
+    const modalRegistroExito = modalRegistroExitoElement ? bootstrap.Modal.getOrCreateInstance(modalRegistroExitoElement) : null;
 
     if (formularioAgregarTarea) {
         formularioAgregarTarea.addEventListener('submit', function (event) {
@@ -404,8 +401,13 @@ include 'controller_ats.php';
                         areaSelect.innerHTML = '<option value="" selected disabled>Seleccione primero una gerencia...</option>';
                         areaSelect.disabled = true;
                     }
+                    if (modalAgregarTarea) {
+                        modalAgregarTarea.hide();
+                    }
                     if (modalRegistroExito) {
                         modalRegistroExito.show();
+                    } else {
+                        alert(payload.message || 'Registro guardado correctamente.');
                     }
                     setTimeout(() => window.location.reload(), 1200);
                 } else {
@@ -502,13 +504,6 @@ include 'controller_ats.php';
             });
         });
     });
-
-    const autoUpdateConfig = {
-        pagina: <?php echo $pagina_actual; ?>,
-        limite: <?php echo $registros_por_pagina; ?>,
-        filtro_gerencia: <?php echo $filtro_gerencia; ?>,
-        filtro_area: <?php echo $filtro_area; ?>
-    };
 
     function actualizarEstadoUI(select, estadoNormalizado) {
         select.value = estadoNormalizado;
