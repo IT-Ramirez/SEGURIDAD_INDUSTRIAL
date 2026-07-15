@@ -63,67 +63,79 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
     if ($gerencia_id && $area_id && $ubicacion && $nivel_riesgo_inicial && $nivel_riesgo_final && $fecha && $actividad) {
         $estado_inicial = 'En desarrollo';
 
-        if ($has_nivel_inicial && $has_nivel_final) {
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, nivel_riesgo, fecha, permisos_requeridos, actividad";
-            $params = [
-                ':gerencia_id' => $gerencia_id,
-                ':area_id' => $area_id,
-                ':ubicacion' => $ubicacion,
-                ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
-                ':nivel_riesgo_final' => $nivel_riesgo_final,
-                ':nivel_riesgo' => '', 
-                ':fecha' => $fecha,
-                ':permisos_requeridos' => $permisos_requeridos_json,
-                ':actividad' => $actividad
-            ];
+        try {
+            if ($has_nivel_inicial && $has_nivel_final) {
+                $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo_inicial, nivel_riesgo_final, nivel_riesgo, fecha, permisos_requeridos, actividad";
+                $params = [
+                    ':gerencia_id' => $gerencia_id,
+                    ':area_id' => $area_id,
+                    ':ubicacion' => $ubicacion,
+                    ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
+                    ':nivel_riesgo_final' => $nivel_riesgo_final,
+                    ':nivel_riesgo' => '', 
+                    ':fecha' => $fecha,
+                    ':permisos_requeridos' => $permisos_requeridos_json,
+                    ':actividad' => $actividad
+                ];
 
-            if ($has_estado) {
-                $sql .= ", estado) VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
-                $params[':estado'] = $estado_inicial;
+                if ($has_estado) {
+                    $sql .= ", estado) VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
+                    $params[':estado'] = $estado_inicial;
+                } else {
+                    $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
+                }
+
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
             } else {
-                $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
+                $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
+                $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, permisos_requeridos, actividad";
+                $params = [
+                    ':gerencia_id'  => $gerencia_id,
+                    ':area_id'      => $area_id,
+                    ':ubicacion'    => $ubicacion,
+                    ':nivel_riesgo' => $nivel_riesgo,
+                    ':fecha'        => $fecha,
+                    ':permisos_requeridos' => $permisos_requeridos_json,
+                    ':actividad'    => $actividad
+                ];
+
+                if ($has_estado) {
+                    $sql .= ", estado) VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
+                    $params[':estado'] = $estado_inicial;
+                } else {
+                    $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
+                }
+
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($params);
             }
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
-        } else {
-            $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
-            $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, nivel_riesgo, fecha, permisos_requeridos, actividad";
-            $params = [
-                ':gerencia_id'  => $gerencia_id,
-                ':area_id'      => $area_id,
-                ':ubicacion'    => $ubicacion,
-                ':nivel_riesgo' => $nivel_riesgo,
-                ':fecha'        => $fecha,
-                ':permisos_requeridos' => $permisos_requeridos_json,
-                ':actividad'    => $actividad
-            ];
-
-            if ($has_estado) {
-                $sql .= ", estado) VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad, :estado)";
-                $params[':estado'] = $estado_inicial;
+            // Manejo dinámico de respuesta: Si es AJAX (Fetch) responde JSON, si no, redirecciona
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'success', 'message' => 'Registro de ATS guardado exitosamente.']);
+                exit;
             } else {
-                $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
+                echo "<script>alert('Registro de ATS guardado exitosamente.'); window.location.href='index.php';</script>";
+                exit;
             }
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
+        } catch (PDOException $e) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error en la base de datos: ' . $e->getMessage()]);
+                exit;
+            } else {
+                echo "<script>alert('Error al guardar: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
+                exit;
+            }
         }
-
-        echo "<script>alert('Registro de ATS guardado exitosamente.'); window.location.href='index.php';</script>";
-        exit;
     }
 }
 
 if ($pdo) {
     $gerencias = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC")->fetchAll();
-
-    // ==========================================
-    // CONFIGURACIÓN DE PAGINACIÓN LOGIC (CORREGIDO)
-    // ==========================================
-    $registros_por_pagina = 10;
-    $pagina_actual = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
-    $offset = ($pagina_actual - 1) * $registros_por_pagina;
 
     // Construcción de condiciones comunes para conteo y consulta
     $conditions = [];
@@ -152,7 +164,7 @@ if ($pdo) {
     $stmtCount = $pdo->prepare($sqlCount);
     $stmtCount->execute($params);
     $total_registros = $stmtCount->fetchColumn();
-    $total_paginas = ceil($total_registros / $registros_por_pagina);
+    $total_paginas = max(1, ceil($total_registros / $registros_por_pagina));
 
     // 2. Obtener las columnas y registros limitados para la página actual
     $selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
@@ -187,7 +199,8 @@ if ($pdo) {
 }
 
 // Función auxiliar para mantener parámetros de filtros al cambiar de página
-function buildQueryString($page, $f_gerencia, $f_area, $f_estado) {
+// (Modificada para que $f_estado tenga un valor por defecto, evitando errores de conteo de argumentos)
+function buildQueryString($page, $f_gerencia = 0, $f_area = 0, $f_estado = '') {
     $query = ['pagina' => $page];
     if ($f_gerencia > 0) $query['filtro_gerencia'] = $f_gerencia;
     if ($f_area > 0) $query['filtro_area'] = $f_area;
