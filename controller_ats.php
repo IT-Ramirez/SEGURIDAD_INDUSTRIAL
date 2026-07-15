@@ -1,36 +1,51 @@
 <?php
 // 1. CONFIGURACIÓN DE CONEXIÓN A LA BASE DE DATOS
 include 'config.php';
+
+$pdo = null;
+$gerencias = [];
+$areas_filtro_tabla = [];
+$tareas = [];
+$total_registros = 0;
+$total_paginas = 1;
+$registros_por_pagina = 10;
+$pagina_actual = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+$has_nivel_inicial = false;
+$has_nivel_final = false;
+$has_estado = false;
+
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $user, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
 } catch (PDOException $e) {
-    die("Error crítico de conexión: " . $e->getMessage());
+    $pdo = null;
 }
 
 // Variables de control para los Filtros de la Tabla Principal
 $filtro_gerencia = isset($_GET['filtro_gerencia']) ? intval($_GET['filtro_gerencia']) : 0;
 $filtro_area = isset($_GET['filtro_area']) ? intval($_GET['filtro_area']) : 0;
 $filtro_estado = isset($_GET['filtro_estado']) ? trim($_GET['filtro_estado']) : '';
-$areas_filtro_tabla = [];
 
-if ($filtro_gerencia > 0) {
-    $stmtFiltroAreas = $pdo->prepare("SELECT * FROM areas WHERE gerencia_id = ? ORDER BY nombre ASC");
-    $stmtFiltroAreas->execute([$filtro_gerencia]);
-    $areas_filtro_tabla = $stmtFiltroAreas->fetchAll();
+if ($pdo) {
+    if ($filtro_gerencia > 0) {
+        $stmtFiltroAreas = $pdo->prepare("SELECT * FROM areas WHERE gerencia_id = ? ORDER BY nombre ASC");
+        $stmtFiltroAreas->execute([$filtro_gerencia]);
+        $areas_filtro_tabla = $stmtFiltroAreas->fetchAll();
+    }
+
+    $stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicial'");
+    $has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
+    $stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
+    $has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
+    $stmtEstadoCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'estado'");
+    $has_estado = ($stmtEstadoCol && $stmtEstadoCol->fetch() !== false);
 }
 
-$stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicial'");
-$has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
-$stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
-$has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
-$stmtEstadoCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'estado'");
-$has_estado = ($stmtEstadoCol && $stmtEstadoCol->fetch() !== false);
-
 // 3. GUARDAR EL REGISTRO
-if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $gerencia_id = $_POST['gerencia_id'] ?? 0;
     $area_id = $_POST['area_id'] ?? 0;
     $ubicacion = trim($_POST['ubicacion'] ?? '');
@@ -100,74 +115,76 @@ if (isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER['REQUEST
     }
 }
 
-$gerencias = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC")->fetchAll();
+if ($pdo) {
+    $gerencias = $pdo->query("SELECT * FROM gerencias ORDER BY nombre ASC")->fetchAll();
 
-// ==========================================
-// CONFIGURACIÓN DE PAGINACIÓN LOGIC (CORREGIDO)
-// ==========================================
-$registros_por_pagina = 10;
-$pagina_actual = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
-$offset = ($pagina_actual - 1) * $registros_por_pagina;
+    // ==========================================
+    // CONFIGURACIÓN DE PAGINACIÓN LOGIC (CORREGIDO)
+    // ==========================================
+    $registros_por_pagina = 10;
+    $pagina_actual = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
+    $offset = ($pagina_actual - 1) * $registros_por_pagina;
 
-// Construcción de condiciones comunes para conteo y consulta
-$conditions = [];
-$params = [];
+    // Construcción de condiciones comunes para conteo y consulta
+    $conditions = [];
+    $params = [];
 
-if ($filtro_gerencia > 0) {
-    $conditions[] = "t.gerencia_id = ?";
-    $params[] = $filtro_gerencia;
-}
-if ($filtro_area > 0) {
-    $conditions[] = "t.area_id = ?";
-    $params[] = $filtro_area;
-}
-if ($has_estado && $filtro_estado !== '') {
-    $allowedEstados = ['En desarrollo', 'Finalizado'];
-    if (in_array($filtro_estado, $allowedEstados, true)) {
-        $conditions[] = "t.estado = ?";
-        $params[] = $filtro_estado;
+    if ($filtro_gerencia > 0) {
+        $conditions[] = "t.gerencia_id = ?";
+        $params[] = $filtro_gerencia;
     }
+    if ($filtro_area > 0) {
+        $conditions[] = "t.area_id = ?";
+        $params[] = $filtro_area;
+    }
+    if ($has_estado && $filtro_estado !== '') {
+        $allowedEstados = ['En desarrollo', 'Finalizado'];
+        if (in_array($filtro_estado, $allowedEstados, true)) {
+            $conditions[] = "t.estado = ?";
+            $params[] = $filtro_estado;
+        }
+    }
+
+    $whereSQL = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
+
+    // 1. Contar el total de registros bajo los filtros actuales
+    $sqlCount = "SELECT COUNT(*) FROM tareas t" . $whereSQL;
+    $stmtCount = $pdo->prepare($sqlCount);
+    $stmtCount->execute($params);
+    $total_registros = $stmtCount->fetchColumn();
+    $total_paginas = ceil($total_registros / $registros_por_pagina);
+
+    // 2. Obtener las columnas y registros limitados para la página actual
+    $selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
+    if ($has_estado) {
+        $selectCols[] = 't.estado';
+    }
+    if ($has_nivel_inicial && $has_nivel_final) {
+        $selectCols[] = 't.nivel_riesgo_inicial';
+        $selectCols[] = 't.nivel_riesgo_final';
+    }
+
+    $sqlTareas = "SELECT " . implode(', ', $selectCols) . " FROM tareas t
+                  INNER JOIN gerencias g ON t.gerencia_id = g.id
+                  INNER JOIN areas a ON t.area_id = a.id" 
+                  . $whereSQL . 
+                  " ORDER BY t.id DESC LIMIT ? OFFSET ?";
+
+    $stmtTareas = $pdo->prepare($sqlTareas);
+
+    // Vinculamos primero los parámetros de los filtros dinámicos (Gerencia / Área)
+    $idx = 1;
+    foreach ($params as $param) {
+        $stmtTareas->bindValue($idx++, $param);
+    }
+
+    // Vinculamos estrictamente como enteros LIMIT y OFFSET para evitar que se ignoren
+    $stmtTareas->bindValue($idx++, $registros_por_pagina, PDO::PARAM_INT);
+    $stmtTareas->bindValue($idx, $offset, PDO::PARAM_INT);
+
+    $stmtTareas->execute();
+    $tareas = $stmtTareas->fetchAll();
 }
-
-$whereSQL = !empty($conditions) ? " WHERE " . implode(" AND ", $conditions) : "";
-
-// 1. Contar el total de registros bajo los filtros actuales
-$sqlCount = "SELECT COUNT(*) FROM tareas t" . $whereSQL;
-$stmtCount = $pdo->prepare($sqlCount);
-$stmtCount->execute($params);
-$total_registros = $stmtCount->fetchColumn();
-$total_paginas = ceil($total_registros / $registros_por_pagina);
-
-// 2. Obtener las columnas y registros limitados para la página actual
-$selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
-if ($has_estado) {
-    $selectCols[] = 't.estado';
-}
-if ($has_nivel_inicial && $has_nivel_final) {
-    $selectCols[] = 't.nivel_riesgo_inicial';
-    $selectCols[] = 't.nivel_riesgo_final';
-}
-
-$sqlTareas = "SELECT " . implode(', ', $selectCols) . " FROM tareas t
-              INNER JOIN gerencias g ON t.gerencia_id = g.id
-              INNER JOIN areas a ON t.area_id = a.id" 
-              . $whereSQL . 
-              " ORDER BY t.id DESC LIMIT ? OFFSET ?";
-
-$stmtTareas = $pdo->prepare($sqlTareas);
-
-// Vinculamos primero los parámetros de los filtros dinámicos (Gerencia / Área)
-$idx = 1;
-foreach ($params as $param) {
-    $stmtTareas->bindValue($idx++, $param);
-}
-
-// Vinculamos estrictamente como enteros LIMIT y OFFSET para evitar que se ignoren
-$stmtTareas->bindValue($idx++, $registros_por_pagina, PDO::PARAM_INT);
-$stmtTareas->bindValue($idx, $offset, PDO::PARAM_INT);
-
-$stmtTareas->execute();
-$tareas = $stmtTareas->fetchAll();
 
 // Función auxiliar para mantener parámetros de filtros al cambiar de página
 function buildQueryString($page, $f_gerencia, $f_area, $f_estado) {

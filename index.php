@@ -114,12 +114,12 @@ include 'controller_ats.php';
                             <th>Gerencia</th>
                             <th>Área</th>
                             <th>Actividad</th>
-                            <th>Riesgo Inicial</th>
-                            <th>Riesgo Final</th>
                             <th>Ubicación</th>
                             <th>Fecha</th>
-                            <th>Estado</th>
+                            <th>Riesgo Inicial</th>
+                            <th>Riesgo Final</th>
                             <th>Permisos Requeridos</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -151,7 +151,9 @@ include 'controller_ats.php';
                                     <td><?php echo htmlspecialchars($tarea['gerencia']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['area']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['actividad']); ?></td>
-                                    
+                                    <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
+                                    <td><?php echo $tarea['fecha']; ?></td>
+
                                     <td>
                                         <?php if ($riesgoInicial !== ''): ?>
                                             <span class="badge <?php echo $getBadgeClass($riesgoInicial); ?>"><?php echo htmlspecialchars($riesgoInicial); ?></span>
@@ -168,25 +170,6 @@ include 'controller_ats.php';
                                         <?php endif; ?>
                                     </td>
 
-                                    <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
-                                    <td><?php echo $tarea['fecha']; ?></td>
-                                    <td>
-                                        <?php
-                                        $estadoActual = trim($tarea['estado'] ?? '');
-                                        if ($estadoActual === '') {
-                                            $estadoActual = 'En desarrollo';
-                                        }
-                                        $estadoLabel = ($estadoActual === 'finalizado' || $estadoActual === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
-                                        $estadoClass = ($estadoLabel === 'Finalizado') ? 'badge-finalizado' : 'badge-en-desarrollo';
-                                        ?>
-                                        <div class="d-flex flex-column gap-2">
-                                            <span class="badge <?php echo $estadoClass; ?> align-self-start"><?php echo htmlspecialchars($estadoLabel); ?></span>
-                                            <select class="form-select form-select-sm estado-select" data-id="<?php echo (int)$tarea['id']; ?>">
-                                                <option value="En desarrollo" <?php echo ($estadoLabel === 'En desarrollo') ? 'selected' : ''; ?>>En desarrollo</option>
-                                                <option value="Finalizado" <?php echo ($estadoLabel === 'Finalizado') ? 'selected' : ''; ?>>Finalizado</option>
-                                            </select>
-                                        </div>
-                                    </td>
                                     <td>
                                         <?php
                                         $permisos = [];
@@ -207,6 +190,23 @@ include 'controller_ats.php';
                                             echo '<span class="text-muted small">Sin permisos</span>';
                                         }
                                         ?>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $estadoActual = trim($tarea['estado'] ?? '');
+                                        if ($estadoActual === '') {
+                                            $estadoActual = 'En desarrollo';
+                                        }
+                                        $estadoLabel = ($estadoActual === 'finalizado' || $estadoActual === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
+                                        $estadoClass = ($estadoLabel === 'Finalizado') ? 'badge-finalizado' : 'badge-en-desarrollo';
+                                        ?>
+                                        <div class="d-flex flex-column gap-2">
+                                            <span class="badge <?php echo $estadoClass; ?> align-self-start"><?php echo htmlspecialchars($estadoLabel); ?></span>
+                                            <select class="form-select form-select-sm estado-select" data-id="<?php echo (int)$tarea['id']; ?>">
+                                                <option value="En desarrollo" <?php echo ($estadoLabel === 'En desarrollo') ? 'selected' : ''; ?>>En desarrollo</option>
+                                                <option value="Finalizado" <?php echo ($estadoLabel === 'Finalizado') ? 'selected' : ''; ?>>Finalizado</option>
+                                            </select>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -259,7 +259,7 @@ include 'controller_ats.php';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             
-            <form action="index.php?action=guardar" method="POST">
+            <form id="formAgregarTarea" action="index.php?action=guardar" method="POST">
                 <div class="modal-body row g-3">
                     <div class="col-md-6">
                         <label for="gerencia_id" class="form-label"><strong>Gerencia</strong></label>
@@ -349,32 +349,111 @@ include 'controller_ats.php';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('gerencia_id').addEventListener('change', function() {
-        const gerenciaId = this.value;
-        const selectArea = document.getElementById('area_id');
-        
-        selectArea.innerHTML = '<option value="" selected disabled>Cargando áreas...</option>';
-        selectArea.disabled = true;
+    const formularioAgregarTarea = document.getElementById('formAgregarTarea');
+    const modalAgregarTareaElement = document.getElementById('modalAgregarTarea');
+    const modalRegistroExitoElement = document.getElementById('modalRegistroExito');
+    const modalRegistroExitoMensaje = document.getElementById('modalRegistroExitoMensaje');
 
-        if(gerenciaId > 0) {
-            fetch(`procesar.php?action=get_areas_por_gerencia&gerencia_id=${gerenciaId}`)
-                .then(response => response.json())
-                .then(res => {
-                    if(res.status === 'success') {
-                        selectArea.innerHTML = '<option value="" selected disabled>Seleccione Área...</option>';
-                        res.data.forEach(area => {
-                            selectArea.innerHTML += `<option value="${area.id}">${area.nombre}</option>`;
-                        });
-                        selectArea.disabled = false;
-                    } else {
-                        selectArea.innerHTML = '<option value="" selected disabled>Error al cargar áreas</option>';
-                    }
-                })
-                .catch(() => {
-                    selectArea.innerHTML = '<option value="" selected disabled>Error de red</option>';
-                });
-        }
+    const modalAgregarTarea = (modalAgregarTareaElement && window.bootstrap && bootstrap.Modal)
+        ? bootstrap.Modal.getOrCreateInstance(modalAgregarTareaElement)
+        : null;
+    const modalRegistroExito = (modalRegistroExitoElement && window.bootstrap && bootstrap.Modal)
+        ? bootstrap.Modal.getOrCreateInstance(modalRegistroExitoElement)
+        : null;
+
+    document.querySelectorAll('[data-bs-target="#modalAgregarTarea"]').forEach(button => {
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            if (modalAgregarTarea) {
+                modalAgregarTarea.show();
+            }
+        });
     });
+
+    if (formularioAgregarTarea) {
+        formularioAgregarTarea.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(formularioAgregarTarea);
+            const submitButton = formularioAgregarTarea.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
+            }
+
+            fetch('procesar.php?action=guardar', {
+                method: 'POST',
+                body: formData
+            })
+            .then(async response => {
+                const text = await response.text();
+                let payload = null;
+                try {
+                    payload = JSON.parse(text);
+                } catch (error) {
+                    payload = { status: 'error', message: text || 'No se pudo interpretar la respuesta del servidor.' };
+                }
+
+                if (payload.status === 'success') {
+                    if (modalRegistroExitoMensaje) {
+                        modalRegistroExitoMensaje.textContent = payload.message || 'Registro guardado correctamente.';
+                    }
+                    formularioAgregarTarea.reset();
+                    const areaSelect = document.getElementById('area_id');
+                    if (areaSelect) {
+                        areaSelect.innerHTML = '<option value="" selected disabled>Seleccione primero una gerencia...</option>';
+                        areaSelect.disabled = true;
+                    }
+                    if (modalRegistroExito) {
+                        modalRegistroExito.show();
+                    }
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    alert(payload.message || 'No se pudo guardar el registro.');
+                }
+            })
+            .catch(() => {
+                alert('Ocurrió un error al guardar el registro.');
+            })
+            .finally(() => {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Guardar Registro';
+                }
+            });
+        });
+    }
+
+    const gerenciaSelect = document.getElementById('gerencia_id');
+    if (gerenciaSelect) {
+        gerenciaSelect.addEventListener('change', function() {
+            const gerenciaId = this.value;
+            const selectArea = document.getElementById('area_id');
+
+            if (!selectArea) return;
+            selectArea.innerHTML = '<option value="" selected disabled>Cargando áreas...</option>';
+            selectArea.disabled = true;
+
+            if (gerenciaId > 0) {
+                fetch(`procesar.php?action=get_areas_por_gerencia&gerencia_id=${gerenciaId}`)
+                    .then(response => response.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            selectArea.innerHTML = '<option value="" selected disabled>Seleccione Área...</option>';
+                            res.data.forEach(area => {
+                                selectArea.innerHTML += `<option value="${area.id}">${area.nombre}</option>`;
+                            });
+                            selectArea.disabled = false;
+                        } else {
+                            selectArea.innerHTML = '<option value="" selected disabled>Error al cargar áreas</option>';
+                        }
+                    })
+                    .catch(() => {
+                        selectArea.innerHTML = '<option value="" selected disabled>Error de red</option>';
+                    });
+            }
+        });
+    }
 
     const permisoCheckboxes = document.querySelectorAll('.permiso-checkbox');
     const hashNoPermiso = "<?php echo md5('No se requiere permiso'); ?>";
