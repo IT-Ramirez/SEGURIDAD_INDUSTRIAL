@@ -310,10 +310,14 @@ include 'controller_ats.php';
                         <input type="text" class="form-control" id="responsable" name="responsable" placeholder="Nombre completo del responsable" required>
                     </div>
 
-                    <div class="col-md-12">
-                        <label for="fecha" class="form-label"><strong>Fecha</strong></label>
-                        <input type="date" class="form-control" id="fecha" name="fecha" value="<?php echo date('Y-m-d'); ?>" required>
-                    </div>
+                   <div class="col-md-12">
+    <label for="fecha" class="form-label"><strong>Fecha</strong></label>
+    <input type="date" class="form-control" id="fecha" name="fecha" 
+           value="<?php echo date('Y-m-d'); ?>" 
+           readonly 
+           style="pointer-events: none;" 
+           required>
+</div>
 
                     <div class="col-md-12">
                         <label class="form-label"><strong>Permisos Requeridos</strong></label>
