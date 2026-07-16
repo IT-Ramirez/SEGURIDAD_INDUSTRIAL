@@ -1,8 +1,9 @@
 <?php
-$host = "localhost";
-$user =  "root";
-$password = "Tecnologias11-11";
-$database = "equinox_gold";
+//Configuracion de BBDD por defecto
+	$servername = "localhost";
+	$username = "usreqxApp";
+	$password = "Fhj09y6mqDF#z7v";
+    $database = "equinox_gold";
 ?>
 
 
