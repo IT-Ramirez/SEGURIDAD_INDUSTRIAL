@@ -72,8 +72,35 @@ if ($action === 'listar') {
         $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
         $offset = ($pagina - 1) * $limite;
 
-        $total_items = $pdo->query("SELECT COUNT(*) FROM tareas")->fetchColumn();
-        $total_paginas = ceil($total_items / $limite);
+        $filtro_gerencia = isset($_GET['filtro_gerencia']) ? intval($_GET['filtro_gerencia']) : 0;
+        $filtro_area = isset($_GET['filtro_area']) ? intval($_GET['filtro_area']) : 0;
+        $filtro_estado = isset($_GET['filtro_estado']) ? trim($_GET['filtro_estado']) : '';
+
+        $conditions = [];
+        $params = [];
+
+        if ($filtro_gerencia > 0) {
+            $conditions[] = 't.gerencia_id = ?';
+            $params[] = $filtro_gerencia;
+        }
+        if ($filtro_area > 0) {
+            $conditions[] = 't.area_id = ?';
+            $params[] = $filtro_area;
+        }
+        if ($has_estado && $filtro_estado !== '') {
+            $allowedEstados = ['En desarrollo', 'Finalizado'];
+            if (in_array($filtro_estado, $allowedEstados, true)) {
+                $conditions[] = 't.estado = ?';
+                $params[] = $filtro_estado;
+            }
+        }
+
+        $whereSQL = !empty($conditions) ? ' WHERE ' . implode(' AND ', $conditions) : '';
+
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM tareas t" . $whereSQL);
+        $countStmt->execute($params);
+        $total_items = (int)$countStmt->fetchColumn();
+        $total_paginas = max(1, (int)ceil($total_items / $limite));
 
         $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.responsable', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
         if ($has_estado) {
@@ -87,12 +114,21 @@ if ($action === 'listar') {
         $sql = "SELECT " . implode(', ', $cols) . " FROM tareas t
                 INNER JOIN gerencias g ON t.gerencia_id = g.id
                 INNER JOIN areas a ON t.area_id = a.id
-                ORDER BY t.id DESC LIMIT $limite OFFSET $offset";
-                
-        $stmt = $pdo->query($sql);
-        
+                " . $whereSQL . "
+                ORDER BY t.id DESC LIMIT ? OFFSET ?";
+
+        $stmt = $pdo->prepare($sql);
+
+        $idx = 1;
+        foreach ($params as $param) {
+            $stmt->bindValue($idx++, $param);
+        }
+        $stmt->bindValue($idx++, $limite, PDO::PARAM_INT);
+        $stmt->bindValue($idx, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
         echo json_encode([
-            "status" => "success", 
+            "status" => "success",
             "paginacion" => [
                 "total_registros" => (int)$total_items,
                 "paginas_totales" => (int)$total_paginas,

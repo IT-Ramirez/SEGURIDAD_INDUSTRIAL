@@ -392,7 +392,8 @@ include 'controller_ats.php';
         pagina: parseInt("<?php echo !empty($pagina_actual) ? $pagina_actual : 1; ?>") || 1,
         limite: parseInt("<?php echo !empty($registros_por_pagina) ? $registros_por_pagina : 10; ?>") || 10,
         filtro_gerencia: parseInt("<?php echo !empty($filtro_gerencia) ? $filtro_gerencia : 0; ?>") || 0,
-        filtro_area: parseInt("<?php echo !empty($filtro_area) ? $filtro_area : 0; ?>") || 0
+        filtro_area: parseInt("<?php echo !empty($filtro_area) ? $filtro_area : 0; ?>") || 0,
+        filtro_estado: "<?php echo addslashes($filtro_estado ?? ''); ?>"
     };
 
     const formularioAgregarTarea = document.getElementById('formAgregarTarea');
@@ -487,8 +488,18 @@ include 'controller_ats.php';
         });
     }
 
+    const filtroGerenciaSelect = document.getElementById('filtro_gerencia');
+    const filtroAreaSelect = document.getElementById('filtro_area');
     const gerenciaSelect = document.getElementById('gerencia_id');
     const areaSelect = document.getElementById('area_id');
+
+    if (filtroGerenciaSelect && filtroAreaSelect) {
+        filtroGerenciaSelect.addEventListener('change', function () {
+            if (Number(this.value) !== 0) {
+                filtroAreaSelect.value = '0';
+            }
+        });
+    }
 
     function cargarAreasPorGerencia(gerenciaId, selectedAreaId = 0) {
         if (!areaSelect) return;
@@ -734,8 +745,8 @@ include 'controller_ats.php';
             action: 'listar',
             pagina: autoUpdateConfig.pagina,
             limite: autoUpdateConfig.limite,
-            filtro_gerencia: autoUpdateConfig.filtro_gerencia,
-            filtro_area: autoUpdateConfig.filtro_area,
+            filtro_gerencia: String(autoUpdateConfig.filtro_gerencia || 0),
+            filtro_area: String(autoUpdateConfig.filtro_area || 0),
             filtro_estado: autoUpdateConfig.filtro_estado || ''
         });
 
