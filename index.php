@@ -372,7 +372,7 @@ include 'controller_ats.php';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <label for="editUrlInput" class="form-label"><strong>Comparta esta URL con el propietario del registro:</strong></label>
+                <label for="editUrlInput" class="form-label"><strong>Copie este token de autorización para el propietario del registro:</strong></label>
                 <div class="input-group">
                     <input type="text" class="form-control" id="editUrlInput" readonly>
                     <button type="button" class="btn btn-gold" id="btnCopiarUrl">Copiar</button>
@@ -399,6 +399,7 @@ include 'controller_ats.php';
     const modalAgregarTareaElement = document.getElementById('modalAgregarTarea');
     const modalUrlEdicionElement = document.getElementById('modalUrlEdicion');
     const modalUrlEdicion = modalUrlEdicionElement ? bootstrap.Modal.getOrCreateInstance(modalUrlEdicionElement) : null;
+    const tableBody = document.querySelector('.table-responsive tbody');
 
     // Inicialización del Modal usando Bootstrap 5 de manera limpia
     const modalAgregarTarea = modalAgregarTareaElement ? bootstrap.Modal.getOrCreateInstance(modalAgregarTareaElement) : null;
@@ -454,10 +455,10 @@ include 'controller_ats.php';
                         modalAgregarTarea.hide();
                     }
 
-                    if (payload.edit_url) {
+                    if (payload.edit_token) {
                         const editUrlInput = document.getElementById('editUrlInput');
                         if (editUrlInput) {
-                            editUrlInput.value = payload.edit_url;
+                            editUrlInput.value = payload.edit_token;
                         }
                         if (modalUrlEdicion) {
                             modalUrlEdicion.show();
@@ -466,7 +467,7 @@ include 'controller_ats.php';
                         alert(payload.message || (isEditMode ? 'Registro actualizado correctamente.' : 'Registro guardado correctamente.'));
                     }
 
-                    if (!payload.edit_url) {
+                    if (!payload.edit_token) {
                         window.location.href = 'index.php';
                     }
                 } else {
@@ -568,51 +569,153 @@ include 'controller_ats.php';
         });
     });
 
-    document.querySelectorAll('.estado-select').forEach(select => {
-        select.dataset.currentValue = select.value;
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
-        select.addEventListener('change', function () {
-            const id = this.dataset.id;
-            const estado = this.value;
-            const previousValue = this.dataset.currentValue;
-            const token = window.prompt('Ingrese el token de autorización para cambiar el estado de esta tarea:');
+    function obtenerBadgeClase(riesgo) {
+        const lower = String(riesgo ?? '').toLowerCase();
+        if (lower.includes('extremo')) return 'badge-critico';
+        if (lower.includes('alto')) return 'badge-alto';
+        if (lower.includes('moderado') || lower.includes('medio')) return 'badge-medio';
+        if (lower.includes('bajo')) return 'badge-bajo';
+        return 'bg-secondary text-white';
+    }
 
-            if (token === null) {
-                this.value = previousValue;
-                return;
-            }
+    function obtenerPermisosHtml(permisosRequeridos) {
+        let permisos = [];
 
-            const tokenTrimmed = token.trim();
-            if (tokenTrimmed === '') {
-                this.value = previousValue;
-                alert('Debe ingresar el token de autorización para modificar el estado.');
-                return;
-            }
-
-            fetch('procesar.php?action=actualizar_estado', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                },
-                body: `id=${encodeURIComponent(id)}&estado=${encodeURIComponent(estado)}&edit_token=${encodeURIComponent(tokenTrimmed)}`
-            })
-            .then(response => response.json())
-            .then(res => {
-                if (res.status !== 'success') {
-                    this.value = previousValue;
-                    alert(res.message || 'No se pudo actualizar el estado.');
-                } else {
-                    const estadoNormalizado = (estado === 'finalizado' || estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
-                    actualizarEstadoUI(this, estadoNormalizado);
-                    this.dataset.currentValue = estadoNormalizado;
+        if (permisosRequeridos) {
+            try {
+                const decoded = JSON.parse(permisosRequeridos);
+                if (Array.isArray(decoded)) {
+                    permisos = decoded;
                 }
-            })
-            .catch(() => {
-                this.value = previousValue;
-                alert('No se pudo actualizar el estado.');
-            });
+            } catch (error) {
+                permisos = String(permisosRequeridos)
+                    .split(',')
+                    .map(item => item.trim())
+                    .filter(Boolean);
+            }
+        }
+
+        if (!permisos.length) {
+            return '<span class="text-muted small">Sin permisos</span>';
+        }
+
+        return permisos.map(permiso => {
+            const bgStyle = (permiso === 'No se requiere permiso') ? 'bg-light text-dark border border-secondary-subtle' : 'bg-secondary';
+            return `<span class="badge ${bgStyle} me-1 mb-1">${escaparHtml(permiso)}</span>`;
+        }).join('');
+    }
+
+    function crearFilaTarea(tarea) {
+        const riesgoInicial = String(tarea.nivel_riesgo_inicial ?? '').trim();
+        const riesgoFinal = String(tarea.nivel_riesgo_final ?? '').trim();
+        const riesgoTexto = String(tarea.nivel_riesgo ?? '').trim();
+        const riesgoInicialFinal = riesgoInicial !== '' ? riesgoInicial : (riesgoTexto.split('/')[0] || '').trim();
+        const riesgoFinalFinal = riesgoFinal !== '' ? riesgoFinal : (riesgoTexto.split('/')[1] || '').trim();
+        const estadoActual = String(tarea.estado ?? 'En desarrollo').trim();
+        const estadoLabel = (estadoActual === 'finalizado' || estadoActual === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
+        const estadoClass = (estadoLabel === 'Finalizado') ? 'badge-finalizado' : 'badge-en-desarrollo';
+
+        const riesgoInicialHtml = riesgoInicialFinal !== ''
+            ? `<span class="badge ${obtenerBadgeClase(riesgoInicialFinal)}">${escaparHtml(riesgoInicialFinal)}</span>`
+            : '<span class="text-muted small">-</span>';
+
+        const riesgoFinalHtml = riesgoFinalFinal !== ''
+            ? `<span class="badge ${obtenerBadgeClase(riesgoFinalFinal)}">${escaparHtml(riesgoFinalFinal)}</span>`
+            : '<span class="text-muted small">-</span>';
+
+        return `
+            <tr>
+                <td><strong>#${escaparHtml(tarea.id)}</strong></td>
+                <td>${escaparHtml(tarea.gerencia ?? '')}</td>
+                <td>${escaparHtml(tarea.area ?? '')}</td>
+                <td>${escaparHtml(tarea.actividad ?? '')}</td>
+                <td>${escaparHtml(tarea.ubicacion ?? '')}</td>
+                <td><strong>${escaparHtml(tarea.responsable ?? 'No asignado')}</strong></td>
+                <td>${escaparHtml(tarea.fecha ?? '')}</td>
+                <td>${riesgoInicialHtml}</td>
+                <td>${riesgoFinalHtml}</td>
+                <td>${obtenerPermisosHtml(tarea.permisos_requeridos)}</td>
+                <td>
+                    <div class="d-flex flex-column gap-2">
+                        <span class="badge ${estadoClass} align-self-start">${escaparHtml(estadoLabel)}</span>
+                        <select class="form-select form-select-sm estado-select" data-id="${escaparHtml(tarea.id)}">
+                            <option value="En desarrollo" ${estadoLabel === 'En desarrollo' ? 'selected' : ''}>En desarrollo</option>
+                            <option value="Finalizado" ${estadoLabel === 'Finalizado' ? 'selected' : ''}>Finalizado</option>
+                        </select>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    function renderTabla(rows) {
+        if (!tableBody) return;
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = rows.map(crearFilaTarea).join('');
+        bindEstadoSelects();
+    }
+
+    function bindEstadoSelects() {
+        document.querySelectorAll('.estado-select').forEach(select => {
+            select.dataset.currentValue = select.value;
+
+            select.onchange = function () {
+                const id = this.dataset.id;
+                const estado = this.value;
+                const previousValue = this.dataset.currentValue;
+                const token = window.prompt('Ingrese el token de autorización para cambiar el estado de esta tarea:');
+
+                if (token === null) {
+                    this.value = previousValue;
+                    return;
+                }
+
+                const tokenTrimmed = token.trim();
+                if (tokenTrimmed === '') {
+                    this.value = previousValue;
+                    alert('Debe ingresar el token de autorización para modificar el estado.');
+                    return;
+                }
+
+                fetch('procesar.php?action=actualizar_estado', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                    },
+                    body: `id=${encodeURIComponent(id)}&estado=${encodeURIComponent(estado)}&edit_token=${encodeURIComponent(tokenTrimmed)}`
+                })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status !== 'success') {
+                        this.value = previousValue;
+                        alert(res.message || 'No se pudo actualizar el estado.');
+                    } else {
+                        const estadoNormalizado = (estado === 'finalizado' || estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
+                        actualizarEstadoUI(this, estadoNormalizado);
+                        this.dataset.currentValue = estadoNormalizado;
+                    }
+                })
+                .catch(() => {
+                    this.value = previousValue;
+                    alert('No se pudo actualizar el estado.');
+                });
+            };
         });
-    });
+    }
 
     function actualizarEstadoUI(select, estadoNormalizado) {
         select.value = estadoNormalizado;
@@ -626,30 +729,21 @@ include 'controller_ats.php';
         }
     }
 
-    function actualizarEstadosEnTabla(estados) {
-        estados.forEach(item => {
-            const select = document.querySelector(`.estado-select[data-id="${item.id}"]`);
-            if (!select) return;
-
-            const estadoNormalizado = (item.estado === 'finalizado' || item.estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
-            actualizarEstadoUI(select, estadoNormalizado);
-        });
-    }
-
-    function fetchLatestEstados() {
+    function fetchLatestTable() {
         const query = new URLSearchParams({
-            action: 'estados',
+            action: 'listar',
             pagina: autoUpdateConfig.pagina,
             limite: autoUpdateConfig.limite,
             filtro_gerencia: autoUpdateConfig.filtro_gerencia,
-            filtro_area: autoUpdateConfig.filtro_area
+            filtro_area: autoUpdateConfig.filtro_area,
+            filtro_estado: autoUpdateConfig.filtro_estado || ''
         });
 
         fetch(`procesar.php?${query.toString()}`)
             .then(response => response.json())
             .then(res => {
                 if (res.status === 'success' && Array.isArray(res.data)) {
-                    actualizarEstadosEnTabla(res.data);
+                    renderTabla(res.data);
                 }
             })
             .catch(() => {
@@ -657,8 +751,9 @@ include 'controller_ats.php';
             });
     }
 
-    fetchLatestEstados();
-    setInterval(fetchLatestEstados, 3000);
+    bindEstadoSelects();
+    fetchLatestTable();
+    setInterval(fetchLatestTable, 5000);
 </script>
 </body>
 </html>

@@ -75,15 +75,13 @@ if ($action === 'listar') {
         $total_items = $pdo->query("SELECT COUNT(*) FROM tareas")->fetchColumn();
         $total_paginas = ceil($total_items / $limite);
 
-        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.fecha', 't.permisos_requeridos'];
+        $cols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.responsable', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
         if ($has_estado) {
             $cols[] = 't.estado';
         }
         if ($has_nivel_inicial && $has_nivel_final) {
             $cols[] = 't.nivel_riesgo_inicial';
             $cols[] = 't.nivel_riesgo_final';
-        } else {
-            $cols[] = 't.nivel_riesgo';
         }
 
         $sql = "SELECT " . implode(', ', $cols) . " FROM tareas t

@@ -156,6 +156,7 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
             $insertedId = (int)$pdo->lastInsertId();
             $editUrl = '';
 
+            $editToken = '';
             if ($has_edit_token) {
                 $editToken = bin2hex(random_bytes(16));
                 $stmtToken = $pdo->prepare("UPDATE tareas SET edit_token = ? WHERE id = ?");
@@ -169,13 +170,14 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
                 header('Content-Type: application/json');
                 echo json_encode([
                     'status' => 'success',
-                    'message' => 'Registro de ATS guardado exitosamente.' . ($editUrl !== '' ? ' URL de edición: ' . $editUrl : ''),
-                    'edit_url' => $editUrl
+                    'message' => 'Registro de ATS guardado exitosamente.' . ($editToken !== '' ? ' Token de autorización: ' . $editToken : ''),
+                    'edit_url' => $editUrl,
+                    'edit_token' => $editToken
                 ]);
                 exit;
             }
 
-            $message = 'Registro de ATS guardado exitosamente.' . ($editUrl !== '' ? ' URL de edición: ' . $editUrl : '');
+            $message = 'Registro de ATS guardado exitosamente.' . ($editToken !== '' ? ' Token de autorización: ' . $editToken : '');
             echo "<script>alert('" . addslashes($message) . "'); window.location.href='index.php';</script>";
             exit;
         } catch (PDOException $e) {
