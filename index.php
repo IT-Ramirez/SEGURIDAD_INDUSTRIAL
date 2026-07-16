@@ -1,6 +1,5 @@
 <?php
 include 'controller_ats.php';
-
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -115,6 +114,7 @@ include 'controller_ats.php';
                             <th>Área</th>
                             <th>Actividad</th>
                             <th>Ubicación</th>
+                            <th>Responsable</th>
                             <th>Fecha</th>
                             <th>Riesgo Inicial</th>
                             <th>Riesgo Final</th>
@@ -150,6 +150,7 @@ include 'controller_ats.php';
                                     <td><?php echo htmlspecialchars($tarea['area']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['actividad']); ?></td>
                                     <td><?php echo htmlspecialchars($tarea['ubicacion']); ?></td>
+                                    <td><strong><?php echo htmlspecialchars($tarea['responsable'] ?? 'No asignado'); ?></strong></td>
                                     <td><?php echo $tarea['fecha']; ?></td>
 
                                     <td>
@@ -209,7 +210,7 @@ include 'controller_ats.php';
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <tr><td colspan="10" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>
+                            <tr><td colspan="11" class="text-center text-muted p-4">No se encontraron registros con los criterios seleccionados.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -224,21 +225,21 @@ include 'controller_ats.php';
                 <nav aria-label="Navegación de tareas">
                     <ul class="pagination pagination-sm mb-0 shadow-sm">
                         <li class="page-item <?php echo ($pagina_actual <= 1) ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual - 1, $filtro_gerencia, $filtro_area); ?>" aria-label="Previous">
+                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual - 1, $filtro_gerencia, $filtro_area, $filtro_estado); ?>" aria-label="Previous">
                                 <span aria-hidden="true">&laquo; Ant</span>
                             </a>
                         </li>
 
                         <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
                             <li class="page-item <?php echo ($pagina_actual === $i) ? 'active' : ''; ?>">
-                                <a class="page-link" href="<?php echo buildQueryString($i, $filtro_gerencia, $filtro_area); ?>">
+                                <a class="page-link" href="<?php echo buildQueryString($i, $filtro_gerencia, $filtro_area, $filtro_estado); ?>">
                                     <?php echo $i; ?>
                                 </a>
                             </li>
                         <?php endfor; ?>
 
                         <li class="page-item <?php echo ($pagina_actual >= $total_paginas) ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual + 1, $filtro_gerencia, $filtro_area); ?>" aria-label="Next">
+                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual + 1, $filtro_gerencia, $filtro_area, $filtro_estado); ?>" aria-label="Next">
                                 <span aria-hidden="true">Sig &raquo;</span>
                             </a>
                         </li>
@@ -305,6 +306,11 @@ include 'controller_ats.php';
                     </div>
 
                     <div class="col-md-6">
+                        <label for="responsable" class="form-label"><strong>Responsable de Actividad</strong></label>
+                        <input type="text" class="form-control" id="responsable" name="responsable" placeholder="Nombre completo del responsable" required>
+                    </div>
+
+                    <div class="col-md-12">
                         <label for="fecha" class="form-label"><strong>Fecha</strong></label>
                         <input type="date" class="form-control" id="fecha" name="fecha" value="<?php echo date('Y-m-d'); ?>" required>
                     </div>
@@ -348,7 +354,7 @@ include 'controller_ats.php';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Corrección crítica en la asignación de la configuración de auto-update para evitar romper JS cuando PHP devuelve vacío/null.
+    // Inicialización de la configuración asegurando un valor por defecto si PHP entrega vacío
     const autoUpdateConfig = {
         pagina: parseInt("<?php echo !empty($pagina_actual) ? $pagina_actual : 1; ?>") || 1,
         limite: parseInt("<?php echo !empty($registros_por_pagina) ? $registros_por_pagina : 10; ?>") || 10,
@@ -358,14 +364,9 @@ include 'controller_ats.php';
 
     const formularioAgregarTarea = document.getElementById('formAgregarTarea');
     const modalAgregarTareaElement = document.getElementById('modalAgregarTarea');
-    const modalRegistroExitoElement = document.getElementById('modalRegistroExito');
-    const modalRegistroExitoMensaje = document.getElementById('modalRegistroExitoMensaje');
 
-    // Inicialización segura del Modal usando Bootstrap 5 nativo.
-    // Nota: El botón de "Agregar Registro" ya cuenta con data-bs-toggle="modal" y data-bs-target="#modalAgregarTarea",
-    // por lo que Bootstrap lo abrirá automáticamente de forma nativa sin necesidad de forzar los eventos 'click' manualmente.
+    // Inicialización del Modal usando Bootstrap 5 de manera limpia
     const modalAgregarTarea = modalAgregarTareaElement ? bootstrap.Modal.getOrCreateInstance(modalAgregarTareaElement) : null;
-    const modalRegistroExito = modalRegistroExitoElement ? bootstrap.Modal.getOrCreateInstance(modalRegistroExitoElement) : null;
 
     if (formularioAgregarTarea) {
         formularioAgregarTarea.addEventListener('submit', function (event) {
@@ -378,8 +379,13 @@ include 'controller_ats.php';
                 submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
             }
 
-            fetch('procesar.php?action=guardar', {
+            // Enviamos la petición asíncrona a index.php (el cual procesa con controller_ats.php)
+            fetch('index.php?action=guardar', {
                 method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
                 body: formData
             })
             .then(async response => {
@@ -388,34 +394,31 @@ include 'controller_ats.php';
                 try {
                     payload = JSON.parse(text);
                 } catch (error) {
-                    payload = { status: 'error', message: text || 'No se pudo interpretar la respuesta del servidor.' };
+                    payload = { status: 'error', message: 'Respuesta inválida del servidor: ' + text };
                 }
 
                 if (payload.status === 'success') {
-                    if (modalRegistroExitoMensaje) {
-                        modalRegistroExitoMensaje.textContent = payload.message || 'Registro guardado correctamente.';
-                    }
                     formularioAgregarTarea.reset();
+                    
                     const areaSelect = document.getElementById('area_id');
                     if (areaSelect) {
                         areaSelect.innerHTML = '<option value="" selected disabled>Seleccione primero una gerencia...</option>';
                         areaSelect.disabled = true;
                     }
+
                     if (modalAgregarTarea) {
                         modalAgregarTarea.hide();
                     }
-                    if (modalRegistroExito) {
-                        modalRegistroExito.show();
-                    } else {
-                        alert(payload.message || 'Registro guardado correctamente.');
-                    }
-                    setTimeout(() => window.location.reload(), 1200);
+
+                    alert(payload.message || 'Registro guardado correctamente.');
+                    window.location.reload();
                 } else {
                     alert(payload.message || 'No se pudo guardar el registro.');
                 }
             })
-            .catch(() => {
-                alert('Ocurrió un error al guardar el registro.');
+            .catch((error) => {
+                console.error(error);
+                alert('Ocurrió un error de red al guardar el registro.');
             })
             .finally(() => {
                 if (submitButton) {
