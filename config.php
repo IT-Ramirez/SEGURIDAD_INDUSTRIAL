@@ -1,9 +1,8 @@
 <?php
 $host = "localhost";
-$user =  "usreqxApp";
-$password = "Fhj09y6mqDF#z7v";
+$user =  "root";
+$password = "Tecnologias11-11";
 $database = "equinox_gold";
-
 ?>
 
 

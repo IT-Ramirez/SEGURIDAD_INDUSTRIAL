@@ -255,25 +255,29 @@ include 'controller_ats.php';
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header text-white" style="background-color: var(--eqx-primary); border-bottom: 3px solid var(--eqx-accent);">
-                <h5 class="modal-title" id="modalAgregarTareaLabel"><i class="fa-solid fa-file-medical me-2"></i>Nuevo Registro de Tarea / ATS</h5>
+                <h5 class="modal-title" id="modalAgregarTareaLabel"><i class="fa-solid fa-file-medical me-2"></i><?php echo $edit_mode ? 'Editar Registro de Tarea / ATS' : 'Nuevo Registro de Tarea / ATS'; ?></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             
-            <form id="formAgregarTarea" action="index.php?action=guardar" method="POST">
+            <form id="formAgregarTarea" action="<?php echo $edit_mode ? 'index.php?action=actualizar' : 'index.php?action=guardar'; ?>" method="POST" data-action="<?php echo $edit_mode ? 'actualizar' : 'guardar'; ?>" data-edit-mode="<?php echo $edit_mode ? '1' : '0'; ?>">
+                <?php if ($edit_mode && $edit_tarea): ?>
+                    <input type="hidden" name="id" value="<?php echo (int)$edit_tarea['id']; ?>">
+                    <input type="hidden" name="edit_token" value="<?php echo htmlspecialchars($edit_tarea['edit_token'] ?? ''); ?>">
+                <?php endif; ?>
                 <div class="modal-body row g-3">
                     <div class="col-md-6">
                         <label for="gerencia_id" class="form-label"><strong>Gerencia</strong></label>
-                        <select class="form-select" id="gerencia_id" name="gerencia_id" required>
+                        <select class="form-select" id="gerencia_id" name="gerencia_id" required <?php echo $edit_mode ? 'disabled' : ''; ?>>
                             <option value="" selected disabled>Seleccione Gerencia...</option>
                             <?php foreach ($gerencias as $g): ?>
-                                <option value="<?php echo $g['id']; ?>"><?php echo htmlspecialchars($g['nombre']); ?></option>
+                                <option value="<?php echo $g['id']; ?>" <?php echo ($edit_mode && $edit_tarea && (int)$edit_tarea['gerencia_id'] === (int)$g['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($g['nombre']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="col-md-6">
                         <label for="area_id" class="form-label"><strong>Área</strong></label>
-                        <select class="form-select" id="area_id" name="area_id" required disabled>
+                        <select class="form-select" id="area_id" name="area_id" required data-selected-area-id="<?php echo $edit_mode && $edit_tarea ? (int)$edit_tarea['area_id'] : 0; ?>" <?php echo $edit_mode ? '' : 'disabled'; ?>>
                             <option value="" selected disabled>Seleccione primero una gerencia...</option>
                         </select>
                     </div>
@@ -282,43 +286,38 @@ include 'controller_ats.php';
                         <label for="nivel_riesgo_inicial" class="form-label"><strong>Nivel de Riesgo Inicial</strong></label>
                         <select class="form-select" id="nivel_riesgo_inicial" name="nivel_riesgo_inicial" required>
                             <option value="" selected disabled>Seleccione una opción...</option>
-                            <option value="Bajo">Bajo 1-5</option>
-                            <option value="Moderado">Moderado 6-10</option>
-                            <option value="Alto">Alto 11-17</option>
-                            <option value="Extremo">Extremo 18-25</option>
+                            <option value="Bajo" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_inicial'] ?? '') === 'Bajo') ? 'selected' : ''; ?>>Bajo 1-5</option>
+                            <option value="Moderado" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_inicial'] ?? '') === 'Moderado') ? 'selected' : ''; ?>>Moderado 6-10</option>
+                            <option value="Alto" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_inicial'] ?? '') === 'Alto') ? 'selected' : ''; ?>>Alto 11-17</option>
+                            <option value="Extremo" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_inicial'] ?? '') === 'Extremo') ? 'selected' : ''; ?>>Extremo 18-25</option>
                         </select>
                     </div>
 
                     <div class="col-md-6">
                         <label for="nivel_riesgo_final" class="form-label"><strong>Nivel de Riesgo Final</strong></label>
-                        <select class="form-select" id="nivel_riesgo_final" name="nivel_riesgo_final" required>
+                        <select class="form-select" id="nivel_riesgo_final" name="nivel_riesgo_final" required <?php echo $edit_mode ? 'disabled' : ''; ?>>
                             <option value="" selected disabled>Seleccione una opción...</option>
-                            <option value="Bajo">Bajo 1-5</option>
-                            <option value="Moderado">Moderado 6-10</option>
-                            <option value="Alto">Alto 11-17</option>
-                            <option value="Extremo">Extremo 18-25</option>
+                            <option value="Bajo" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_final'] ?? '') === 'Bajo') ? 'selected' : ''; ?>>Bajo 1-5</option>
+                            <option value="Moderado" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_final'] ?? '') === 'Moderado') ? 'selected' : ''; ?>>Moderado 6-10</option>
+                            <option value="Alto" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_final'] ?? '') === 'Alto') ? 'selected' : ''; ?>>Alto 11-17</option>
+                            <option value="Extremo" <?php echo ($edit_mode && $edit_tarea && ($edit_tarea['nivel_riesgo_final'] ?? '') === 'Extremo') ? 'selected' : ''; ?>>Extremo 18-25</option>
                         </select>
                     </div>
 
                     <div class="col-md-6">
                         <label for="ubicacion" class="form-label"><strong>Ubicación Específica</strong></label>
-                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ej: Banco 240, Veta nueva" required>
+                        <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ej: Banco 240, Veta nueva" value="<?php echo htmlspecialchars($edit_mode && $edit_tarea ? ($edit_tarea['ubicacion'] ?? '') : ''); ?>" required <?php echo $edit_mode ? 'readonly' : ''; ?>>
                     </div>
 
                     <div class="col-md-6">
                         <label for="responsable" class="form-label"><strong>Responsable de Actividad</strong></label>
-                        <input type="text" class="form-control" id="responsable" name="responsable" placeholder="Nombre completo del responsable" required>
+                        <input type="text" class="form-control" id="responsable" name="responsable" placeholder="Nombre completo del responsable" value="<?php echo htmlspecialchars($edit_mode && $edit_tarea ? ($edit_tarea['responsable'] ?? '') : ''); ?>" required <?php echo $edit_mode ? 'readonly' : ''; ?>>
                     </div>
 
                    <div class="col-md-12">
-    <label for="fecha" class="form-label"><strong>Fecha</strong></label>
-    <input type="date" class="form-control" id="fecha" name="fecha" 
-           value="<?php echo date('Y-m-d'); ?>" 
-           readonly 
-           style="pointer-events: none;" 
-           required>
-</div>
-
+                        <label for="fecha" class="form-label"><strong>Fecha</strong></label>
+                        <input type="date" class="form-control" id="fecha" name="fecha" value="<?php echo htmlspecialchars($edit_mode && $edit_tarea ? ($edit_tarea['fecha'] ?? date('Y-m-d')) : date('Y-m-d')); ?>" readonly style="pointer-events: none;" required>
+                    </div>
                     <div class="col-md-12">
                         <label class="form-label"><strong>Permisos Requeridos</strong></label>
                         <div class="p-3 rounded border bg-white">
@@ -332,10 +331,19 @@ include 'controller_ats.php';
                                     'Aislamiento en grupo',
                                     'Izaje de carga'
                                 ];
+                                $permisosSeleccionados = [];
+                                if ($edit_mode && $edit_tarea && !empty($edit_tarea['permisos_requeridos'])) {
+                                    $decodedPermisos = json_decode($edit_tarea['permisos_requeridos'], true);
+                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedPermisos)) {
+                                        $permisosSeleccionados = array_map('strval', $decodedPermisos);
+                                    } else {
+                                        $permisosSeleccionados = array_map('trim', explode(',', $edit_tarea['permisos_requeridos']));
+                                    }
+                                }
                                 foreach ($opcionesPermisos as $permiso) {
                             ?>
                                 <div class="form-check form-check-inline me-3 mb-2">
-                                    <input class="form-check-input permiso-checkbox" type="checkbox" name="permisos_requeridos[]" id="permiso_<?php echo md5($permiso); ?>" value="<?php echo htmlspecialchars($permiso); ?>">
+                                    <input class="form-check-input permiso-checkbox" type="checkbox" name="permisos_requeridos[]" id="permiso_<?php echo md5($permiso); ?>" value="<?php echo htmlspecialchars($permiso); ?>" <?php echo in_array($permiso, $permisosSeleccionados, true) ? 'checked' : ''; ?> <?php echo $edit_mode ? 'disabled' : ''; ?>>
                                     <label class="form-check-label" for="permiso_<?php echo md5($permiso); ?>"><?php echo htmlspecialchars($permiso); ?></label>
                                 </div>
                             <?php } ?>
@@ -344,14 +352,35 @@ include 'controller_ats.php';
 
                     <div class="col-md-12">
                         <label for="actividad" class="form-label"><strong>Actividad (Descripción del Trabajo)</strong></label>
-                        <textarea class="form-control" id="actividad" name="actividad" rows="3" placeholder="Describa la tarea..." required></textarea>
+                        <textarea class="form-control" id="actividad" name="actividad" rows="3" placeholder="Describa la tarea..." required <?php echo $edit_mode ? 'readonly' : ''; ?>><?php echo htmlspecialchars($edit_mode && $edit_tarea ? ($edit_tarea['actividad'] ?? '') : ''); ?></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-gold"><i class="fa-solid fa-floppy-disk me-1"></i> Guardar Registro</button>
+                    <button type="submit" class="btn btn-gold"><i class="fa-solid fa-floppy-disk me-1"></i> <?php echo $edit_mode ? 'Actualizar Estado' : 'Guardar Registro'; ?></button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalUrlEdicion" tabindex="-1" aria-labelledby="modalUrlEdicionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background-color: var(--eqx-primary); border-bottom: 3px solid var(--eqx-accent);">
+                <h5 class="modal-title" id="modalUrlEdicionLabel"><i class="fa-solid fa-link me-2"></i>URL de edición</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label for="editUrlInput" class="form-label"><strong>Comparta esta URL con el propietario del registro:</strong></label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="editUrlInput" readonly>
+                    <button type="button" class="btn btn-gold" id="btnCopiarUrl">Copiar</button>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -368,9 +397,18 @@ include 'controller_ats.php';
 
     const formularioAgregarTarea = document.getElementById('formAgregarTarea');
     const modalAgregarTareaElement = document.getElementById('modalAgregarTarea');
+    const modalUrlEdicionElement = document.getElementById('modalUrlEdicion');
+    const modalUrlEdicion = modalUrlEdicionElement ? bootstrap.Modal.getOrCreateInstance(modalUrlEdicionElement) : null;
 
     // Inicialización del Modal usando Bootstrap 5 de manera limpia
     const modalAgregarTarea = modalAgregarTareaElement ? bootstrap.Modal.getOrCreateInstance(modalAgregarTareaElement) : null;
+
+    if (formularioAgregarTarea && formularioAgregarTarea.dataset.editMode === '1') {
+        const gerenciaId = document.getElementById('gerencia_id')?.value || 0;
+        if (gerenciaId > 0 && modalAgregarTarea) {
+            modalAgregarTarea.show();
+        }
+    }
 
     if (formularioAgregarTarea) {
         formularioAgregarTarea.addEventListener('submit', function (event) {
@@ -378,13 +416,14 @@ include 'controller_ats.php';
 
             const formData = new FormData(formularioAgregarTarea);
             const submitButton = formularioAgregarTarea.querySelector('button[type="submit"]');
+            const action = formularioAgregarTarea.dataset.action || 'guardar';
+            const isEditMode = formularioAgregarTarea.dataset.editMode === '1';
             if (submitButton) {
                 submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Guardando...';
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> ' + (isEditMode ? 'Actualizando...' : 'Guardando...');
             }
 
-            // Enviamos la petición asíncrona a index.php (el cual procesa con controller_ats.php)
-            fetch('index.php?action=guardar', {
+            fetch(`index.php?action=${action}`, {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -402,64 +441,113 @@ include 'controller_ats.php';
                 }
 
                 if (payload.status === 'success') {
-                    formularioAgregarTarea.reset();
-                    
-                    const areaSelect = document.getElementById('area_id');
-                    if (areaSelect) {
-                        areaSelect.innerHTML = '<option value="" selected disabled>Seleccione primero una gerencia...</option>';
-                        areaSelect.disabled = true;
+                    if (!isEditMode) {
+                        formularioAgregarTarea.reset();
+                        const areaSelect = document.getElementById('area_id');
+                        if (areaSelect) {
+                            areaSelect.innerHTML = '<option value="" selected disabled>Seleccione primero una gerencia...</option>';
+                            areaSelect.disabled = true;
+                        }
                     }
 
                     if (modalAgregarTarea) {
                         modalAgregarTarea.hide();
                     }
 
-                    alert(payload.message || 'Registro guardado correctamente.');
-                    window.location.reload();
+                    if (payload.edit_url) {
+                        const editUrlInput = document.getElementById('editUrlInput');
+                        if (editUrlInput) {
+                            editUrlInput.value = payload.edit_url;
+                        }
+                        if (modalUrlEdicion) {
+                            modalUrlEdicion.show();
+                        }
+                    } else {
+                        alert(payload.message || (isEditMode ? 'Registro actualizado correctamente.' : 'Registro guardado correctamente.'));
+                    }
+
+                    if (!payload.edit_url) {
+                        window.location.href = 'index.php';
+                    }
                 } else {
-                    alert(payload.message || 'No se pudo guardar el registro.');
+                    alert(payload.message || (isEditMode ? 'No se pudo actualizar el registro.' : 'No se pudo guardar el registro.'));
                 }
             })
             .catch((error) => {
                 console.error(error);
-                alert('Ocurrió un error de red al guardar el registro.');
+                alert('Ocurrió un error de red al ' + (isEditMode ? 'actualizar' : 'guardar') + ' el registro.');
             })
             .finally(() => {
                 if (submitButton) {
                     submitButton.disabled = false;
-                    submitButton.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Guardar Registro';
+                    submitButton.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> ' + (isEditMode ? 'Actualizar Registro' : 'Guardar Registro');
                 }
             });
         });
     }
 
     const gerenciaSelect = document.getElementById('gerencia_id');
+    const areaSelect = document.getElementById('area_id');
+
+    function cargarAreasPorGerencia(gerenciaId, selectedAreaId = 0) {
+        if (!areaSelect) return;
+        areaSelect.innerHTML = '<option value="" selected disabled>Cargando áreas...</option>';
+        areaSelect.disabled = true;
+
+        if (gerenciaId > 0) {
+            fetch(`procesar.php?action=get_areas_por_gerencia&gerencia_id=${gerenciaId}`)
+                .then(response => response.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        areaSelect.innerHTML = '<option value="" selected disabled>Seleccione Área...</option>';
+                        res.data.forEach(area => {
+                            const selected = Number(selectedAreaId) === Number(area.id) ? 'selected' : '';
+                            areaSelect.innerHTML += `<option value="${area.id}" ${selected}>${area.nombre}</option>`;
+                        });
+                        areaSelect.disabled = false;
+                    } else {
+                        areaSelect.innerHTML = '<option value="" selected disabled>Error al cargar áreas</option>';
+                    }
+                })
+                .catch(() => {
+                    areaSelect.innerHTML = '<option value="" selected disabled>Error de red</option>';
+                });
+        }
+    }
+
     if (gerenciaSelect) {
         gerenciaSelect.addEventListener('change', function() {
-            const gerenciaId = this.value;
-            const selectArea = document.getElementById('area_id');
+            cargarAreasPorGerencia(this.value, 0);
+        });
 
-            if (!selectArea) return;
-            selectArea.innerHTML = '<option value="" selected disabled>Cargando áreas...</option>';
-            selectArea.disabled = true;
+        if (gerenciaSelect.value > 0) {
+            const selectedAreaId = areaSelect?.dataset.selectedAreaId || 0;
+            cargarAreasPorGerencia(gerenciaSelect.value, selectedAreaId);
+        }
+    }
 
-            if (gerenciaId > 0) {
-                fetch(`procesar.php?action=get_areas_por_gerencia&gerencia_id=${gerenciaId}`)
-                    .then(response => response.json())
-                    .then(res => {
-                        if (res.status === 'success') {
-                            selectArea.innerHTML = '<option value="" selected disabled>Seleccione Área...</option>';
-                            res.data.forEach(area => {
-                                selectArea.innerHTML += `<option value="${area.id}">${area.nombre}</option>`;
-                            });
-                            selectArea.disabled = false;
-                        } else {
-                            selectArea.innerHTML = '<option value="" selected disabled>Error al cargar áreas</option>';
-                        }
-                    })
-                    .catch(() => {
-                        selectArea.innerHTML = '<option value="" selected disabled>Error de red</option>';
-                    });
+    const copyUrlButton = document.getElementById('btnCopiarUrl');
+    if (copyUrlButton) {
+        copyUrlButton.addEventListener('click', async () => {
+            const editUrlInput = document.getElementById('editUrlInput');
+            if (!editUrlInput) return;
+
+            try {
+                await navigator.clipboard.writeText(editUrlInput.value);
+                copyUrlButton.textContent = 'Copiado';
+                copyUrlButton.classList.add('btn-success');
+                setTimeout(() => {
+                    copyUrlButton.textContent = 'Copiar';
+                    copyUrlButton.classList.remove('btn-success');
+                }, 1200);
+            } catch (error) {
+                editUrlInput.focus();
+                editUrlInput.select();
+                document.execCommand('copy');
+                copyUrlButton.textContent = 'Copiado';
+                setTimeout(() => {
+                    copyUrlButton.textContent = 'Copiar';
+                }, 1200);
             }
         });
     }
@@ -487,13 +575,26 @@ include 'controller_ats.php';
             const id = this.dataset.id;
             const estado = this.value;
             const previousValue = this.dataset.currentValue;
+            const token = window.prompt('Ingrese el token de autorización para cambiar el estado de esta tarea:');
+
+            if (token === null) {
+                this.value = previousValue;
+                return;
+            }
+
+            const tokenTrimmed = token.trim();
+            if (tokenTrimmed === '') {
+                this.value = previousValue;
+                alert('Debe ingresar el token de autorización para modificar el estado.');
+                return;
+            }
 
             fetch('procesar.php?action=actualizar_estado', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
                 },
-                body: `id=${encodeURIComponent(id)}&estado=${encodeURIComponent(estado)}`
+                body: `id=${encodeURIComponent(id)}&estado=${encodeURIComponent(estado)}&edit_token=${encodeURIComponent(tokenTrimmed)}`
             })
             .then(response => response.json())
             .then(res => {
@@ -503,6 +604,7 @@ include 'controller_ats.php';
                 } else {
                     const estadoNormalizado = (estado === 'finalizado' || estado === 'Finalizado') ? 'Finalizado' : 'En desarrollo';
                     actualizarEstadoUI(this, estadoNormalizado);
+                    this.dataset.currentValue = estadoNormalizado;
                 }
             })
             .catch(() => {

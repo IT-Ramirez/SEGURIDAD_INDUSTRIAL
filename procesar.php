@@ -25,24 +25,42 @@ $action = $_GET['action'] ?? '';
 if ($action === 'actualizar_estado' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = intval($_POST['id'] ?? 0);
     $nuevo_estado = trim($_POST['estado'] ?? '');
+    $token = trim($_POST['edit_token'] ?? '');
 
     if (!$has_estado) {
         echo json_encode(["status" => "error", "message" => "La columna de estado no está disponible en la base de datos."]);
         exit;
     }
 
-    if ($id > 0 && ($nuevo_estado === 'En desarrollo' || $nuevo_estado === 'Finalizado' || $nuevo_estado === 'finalizado')) {
-        $estado_guardado = ($nuevo_estado === 'Finalizado' || $nuevo_estado === 'finalizado') ? 'finalizado' : 'En desarrollo';
+    $stmtEditTokenCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'edit_token'");
+    $has_edit_token = ($stmtEditTokenCol && $stmtEditTokenCol->fetch() !== false);
 
-        try {
-            $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ?");
-            $stmt->execute([$estado_guardado, $id]);
-            echo json_encode(["status" => "success", "message" => "Estado actualizado correctamente."]);
-        } catch (Exception $e) {
-            echo json_encode(["status" => "error", "message" => "Error al actualizar: " . $e->getMessage()]);
+    if (!$has_edit_token) {
+        echo json_encode(["status" => "error", "message" => "No existe el token de autorización para esta tarea."]);
+        exit;
+    }
+
+    if ($id <= 0 || $token === '' || !in_array($nuevo_estado, ['En desarrollo', 'Finalizado', 'finalizado'], true)) {
+        echo json_encode(["status" => "error", "message" => "Se requiere el token de autorización para modificar el estado."]);
+        exit;
+    }
+
+    $estado_guardado = ($nuevo_estado === 'Finalizado' || $nuevo_estado === 'finalizado') ? 'Finalizado' : 'En desarrollo';
+
+    try {
+        $stmtOwner = $pdo->prepare("SELECT id FROM tareas WHERE id = ? AND edit_token = ? LIMIT 1");
+        $stmtOwner->execute([$id, $token]);
+
+        if ($stmtOwner->fetch() === false) {
+            echo json_encode(["status" => "error", "message" => "Token de autorización inválido."]);
+            exit;
         }
-    } else {
-        echo json_encode(["status" => "error", "message" => "Datos o estado no válidos."]);
+
+        $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ? AND edit_token = ?");
+        $stmt->execute([$estado_guardado, $id, $token]);
+        echo json_encode(["status" => "success", "message" => "Estado actualizado correctamente."]);
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "message" => "Error al actualizar: " . $e->getMessage()]);
     }
     exit;
 }

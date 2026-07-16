@@ -14,6 +14,11 @@ $offset = ($pagina_actual - 1) * $registros_por_pagina;
 $has_nivel_inicial = false;
 $has_nivel_final = false;
 $has_estado = false;
+$has_edit_token = false;
+$edit_mode = false;
+$edit_tarea = null;
+$edit_token = trim($_GET['token'] ?? '');
+$edit_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $user, $password, [
@@ -36,12 +41,50 @@ if ($pdo) {
         $areas_filtro_tabla = $stmtFiltroAreas->fetchAll();
     }
 
+    $missingTokensStmt = $pdo->query("SELECT id FROM tareas WHERE edit_token IS NULL OR edit_token = ''");
+    while ($rowMissingToken = $missingTokensStmt->fetch()) {
+        $newToken = bin2hex(random_bytes(16));
+        $tokenUpdateStmt = $pdo->prepare("UPDATE tareas SET edit_token = ? WHERE id = ?");
+        $tokenUpdateStmt->execute([$newToken, $rowMissingToken['id']]);
+    }
+
     $stmtInitCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_inicial'");
     $has_nivel_inicial = ($stmtInitCol && $stmtInitCol->fetch() !== false);
     $stmtFinalCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'nivel_riesgo_final'");
     $has_nivel_final = ($stmtFinalCol && $stmtFinalCol->fetch() !== false);
     $stmtEstadoCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'estado'");
     $has_estado = ($stmtEstadoCol && $stmtEstadoCol->fetch() !== false);
+    $stmtEditTokenCol = $pdo->query("SHOW COLUMNS FROM `tareas` LIKE 'edit_token'");
+    $has_edit_token = ($stmtEditTokenCol && $stmtEditTokenCol->fetch() !== false);
+
+    if (!$has_edit_token) {
+        try {
+            $pdo->exec("ALTER TABLE `tareas` ADD COLUMN `edit_token` VARCHAR(255) NULL UNIQUE");
+            $has_edit_token = true;
+        } catch (PDOException $e) {
+            $has_edit_token = false;
+        }
+    }
+
+    if ($has_edit_token && $edit_id > 0 && $edit_token !== '') {
+        $stmtEditTask = $pdo->prepare("SELECT * FROM tareas WHERE id = ? AND edit_token = ? LIMIT 1");
+        $stmtEditTask->execute([$edit_id, $edit_token]);
+        $edit_tarea = $stmtEditTask->fetch();
+        if ($edit_tarea) {
+            $edit_mode = true;
+        }
+    }
+}
+
+function buildEditUrl($id, $token) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $basePath = dirname($_SERVER['PHP_SELF'] ?? '/index.php');
+    $basePath = rtrim($basePath, '/');
+    if ($basePath === '' || $basePath === '.') {
+        $basePath = '';
+    }
+    return $protocol . '://' . $host . $basePath . '/index.php?action=editar&id=' . (int)$id . '&token=' . urlencode($token);
 }
 
 // 3. GUARDAR EL REGISTRO
@@ -54,7 +97,7 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
     $nivel_riesgo_final = trim($_POST['nivel_riesgo_final'] ?? '');
     $fecha = $_POST['fecha'] ?? '';
     $actividad = trim($_POST['actividad'] ?? '');
-    
+
     $permisos_requeridos = $_POST['permisos_requeridos'] ?? [];
     if (!is_array($permisos_requeridos)) {
         $permisos_requeridos = [$permisos_requeridos];
@@ -74,7 +117,7 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
                     ':responsable' => $responsable,
                     ':nivel_riesgo_inicial' => $nivel_riesgo_inicial,
                     ':nivel_riesgo_final' => $nivel_riesgo_final,
-                    ':nivel_riesgo' => '', 
+                    ':nivel_riesgo' => '',
                     ':fecha' => $fecha,
                     ':permisos_requeridos' => $permisos_requeridos_json,
                     ':actividad' => $actividad
@@ -86,21 +129,18 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
                 } else {
                     $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :responsable, :nivel_riesgo_inicial, :nivel_riesgo_final, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
                 }
-
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($params);
             } else {
                 $nivel_riesgo = $nivel_riesgo_inicial . ' / ' . $nivel_riesgo_final;
                 $sql = "INSERT INTO tareas (gerencia_id, area_id, ubicacion, responsable, nivel_riesgo, fecha, permisos_requeridos, actividad";
                 $params = [
-                    ':gerencia_id'  => $gerencia_id,
-                    ':area_id'      => $area_id,
-                    ':ubicacion'    => $ubicacion,
-                    ':responsable'  => $responsable,
+                    ':gerencia_id' => $gerencia_id,
+                    ':area_id' => $area_id,
+                    ':ubicacion' => $ubicacion,
+                    ':responsable' => $responsable,
                     ':nivel_riesgo' => $nivel_riesgo,
-                    ':fecha'        => $fecha,
+                    ':fecha' => $fecha,
                     ':permisos_requeridos' => $permisos_requeridos_json,
-                    ':actividad'    => $actividad
+                    ':actividad' => $actividad
                 ];
 
                 if ($has_estado) {
@@ -109,23 +149,35 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
                 } else {
                     $sql .= ") VALUES (:gerencia_id, :area_id, :ubicacion, :responsable, :nivel_riesgo, :fecha, :permisos_requeridos, :actividad)";
                 }
-
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($params);
             }
 
-            // Detectar si la petición proviene de un objeto Fetch/XHR de JavaScript
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $insertedId = (int)$pdo->lastInsertId();
+            $editUrl = '';
+
+            if ($has_edit_token) {
+                $editToken = bin2hex(random_bytes(16));
+                $stmtToken = $pdo->prepare("UPDATE tareas SET edit_token = ? WHERE id = ?");
+                $stmtToken->execute([$editToken, $insertedId]);
+                $editUrl = buildEditUrl($insertedId, $editToken);
+            }
+
             $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
 
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'success', 'message' => 'Registro de ATS guardado exitosamente.']);
-                exit;
-            } else {
-                echo "<script>alert('Registro de ATS guardado exitosamente.'); window.location.href='index.php';</script>";
+                echo json_encode([
+                    'status' => 'success',
+                    'message' => 'Registro de ATS guardado exitosamente.' . ($editUrl !== '' ? ' URL de edición: ' . $editUrl : ''),
+                    'edit_url' => $editUrl
+                ]);
                 exit;
             }
 
+            $message = 'Registro de ATS guardado exitosamente.' . ($editUrl !== '' ? ' URL de edición: ' . $editUrl : '');
+            echo "<script>alert('" . addslashes($message) . "'); window.location.href='index.php';</script>";
+            exit;
         } catch (PDOException $e) {
             $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
 
@@ -133,10 +185,56 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
                 header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'message' => 'Error en la base de datos: ' . $e->getMessage()]);
                 exit;
-            } else {
-                echo "<script>alert('Error al guardar: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
+            }
+
+            echo "<script>alert('Error al guardar: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
+            exit;
+        }
+    }
+}
+
+if ($pdo && isset($_GET['action']) && $_GET['action'] === 'actualizar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+    $token = trim($_POST['edit_token'] ?? '');
+    $nuevo_estado = trim($_POST['estado'] ?? '');
+
+    if ($id > 0 && $token !== '' && $has_estado && in_array($nuevo_estado, ['En desarrollo', 'Finalizado'], true)) {
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
+
+        try {
+            $stmtOwner = $pdo->prepare("SELECT id FROM tareas WHERE id = ? AND edit_token = ? LIMIT 1");
+            $stmtOwner->execute([$id, $token]);
+
+            if ($stmtOwner->fetch() === false) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'No tiene permisos para editar este registro.']);
+                } else {
+                    echo "<script>alert('No tiene permisos para editar este registro.'); window.history.back();</script>";
+                }
                 exit;
             }
+
+            $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ? AND edit_token = ?");
+            $stmt->execute([$nuevo_estado, $id, $token]);
+
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'success', 'message' => 'Estado actualizado correctamente.']);
+                exit;
+            }
+
+            echo "<script>alert('Estado actualizado correctamente.'); window.location.href='index.php';</script>";
+            exit;
+        } catch (PDOException $e) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error al actualizar: ' . $e->getMessage()]);
+                exit;
+            }
+
+            echo "<script>alert('Error al actualizar: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
+            exit;
         }
     }
 }
@@ -174,7 +272,7 @@ if ($pdo) {
     $total_paginas = max(1, ceil($total_registros / $registros_por_pagina));
 
     // 2. Obtener las columnas y registros limitados para la página actual
-    $selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.responsable', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo'];
+    $selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.responsable', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo', 't.edit_token'];
     if ($has_estado) {
         $selectCols[] = 't.estado';
     }
