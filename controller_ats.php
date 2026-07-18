@@ -156,9 +156,11 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
             $insertedId = (int)$pdo->lastInsertId();
             $editUrl = '';
 
-            $editToken = '';
+          $editToken = '';
             if ($has_edit_token) {
-                $editToken = bin2hex(random_bytes(16));
+                // Genera un número aleatorio entre 0 y 9999 y asegura que tenga 4 dígitos (ej: 0523)
+                $editToken = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+                
                 $stmtToken = $pdo->prepare("UPDATE tareas SET edit_token = ? WHERE id = ?");
                 $stmtToken->execute([$editToken, $insertedId]);
                 $editUrl = buildEditUrl($insertedId, $editToken);
