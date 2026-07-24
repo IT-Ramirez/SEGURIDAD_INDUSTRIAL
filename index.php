@@ -218,33 +218,46 @@ include 'controller_ats.php';
         </div>
         
         <?php if ($total_paginas > 1): ?>
-            <div class="card-footer d-flex justify-content-between align-items-center bg-white py-3 border-top">
+            <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center bg-white py-3 border-top gap-3">
                 <div class="text-muted small">
                     Mostrando página <strong><?php echo $pagina_actual; ?></strong> de <strong><?php echo $total_paginas; ?></strong> (Total de <?php echo $total_registros; ?> registros)
                 </div>
-                <nav aria-label="Navegación de tareas">
-                    <ul class="pagination pagination-sm mb-0 shadow-sm">
-                        <li class="page-item <?php echo ($pagina_actual <= 1) ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual - 1, $filtro_gerencia, $filtro_area, $filtro_estado); ?>" aria-label="Previous">
-                                <span aria-hidden="true">&laquo; Ant</span>
-                            </a>
-                        </li>
-
-                        <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                            <li class="page-item <?php echo ($pagina_actual === $i) ? 'active' : ''; ?>">
-                                <a class="page-link" href="<?php echo buildQueryString($i, $filtro_gerencia, $filtro_area, $filtro_estado); ?>">
-                                    <?php echo $i; ?>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted">Ver</label>
+                        <select id="pageSizeSelect" class="form-select form-select-sm" style="width: auto; min-width: 90px;">
+                            <?php foreach ([10, 20, 50, 100] as $size): ?>
+                                <option value="<?php echo $size; ?>" <?php echo ($registros_por_pagina === $size) ? 'selected' : ''; ?>><?php echo $size; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="text-muted">registros</span>
+                    </div>
+                    <nav aria-label="Navegación de tareas">
+                        <ul class="pagination pagination-sm mb-0 shadow-sm">
+                            <li class="page-item <?php echo ($pagina_actual <= 1) ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo buildQueryString(max(1, $pagina_actual - 1), $filtro_gerencia, $filtro_area, $filtro_estado, $registros_por_pagina); ?>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo; Ant</span>
                                 </a>
                             </li>
-                        <?php endfor; ?>
 
-                        <li class="page-item <?php echo ($pagina_actual >= $total_paginas) ? 'disabled' : ''; ?>">
-                            <a class="page-link" href="<?php echo buildQueryString($pagina_actual + 1, $filtro_gerencia, $filtro_area, $filtro_estado); ?>" aria-label="Next">
-                                <span aria-hidden="true">Sig &raquo;</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
+                            <?php foreach (buildPaginationSequence($pagina_actual, $total_paginas, 2) as $page): ?>
+                                <?php if ($page === null): ?>
+                                    <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                                <?php else: ?>
+                                    <li class="page-item <?php echo ($pagina_actual === $page) ? 'active' : ''; ?>">
+                                        <a class="page-link" href="<?php echo buildQueryString($page, $filtro_gerencia, $filtro_area, $filtro_estado, $registros_por_pagina); ?>"><?php echo $page; ?></a>
+                                    </li>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+
+                            <li class="page-item <?php echo ($pagina_actual >= $total_paginas) ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo buildQueryString(min($total_paginas, $pagina_actual + 1), $filtro_gerencia, $filtro_area, $filtro_estado, $registros_por_pagina); ?>" aria-label="Next">
+                                    <span aria-hidden="true">Sig &raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         <?php endif; ?>
     </div>
@@ -760,6 +773,21 @@ include 'controller_ats.php';
             .catch(() => {
                 // Ignorar errores de red temporales
             });
+    }
+
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function () {
+            const newLimit = parseInt(this.value, 10) || 10;
+            const query = new URLSearchParams({
+                pagina: 1,
+                limite: newLimit,
+                filtro_gerencia: String(autoUpdateConfig.filtro_gerencia || 0),
+                filtro_area: String(autoUpdateConfig.filtro_area || 0),
+                filtro_estado: autoUpdateConfig.filtro_estado || ''
+            });
+            window.location.href = `index.php?${query.toString()}`;
+        });
     }
 
     bindEstadoSelects();

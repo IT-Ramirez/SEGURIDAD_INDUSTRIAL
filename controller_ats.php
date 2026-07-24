@@ -8,7 +8,11 @@ $areas_filtro_tabla = [];
 $tareas = [];
 $total_registros = 0;
 $total_paginas = 1;
-$registros_por_pagina = 10;
+$allowed_page_sizes = [10, 20, 50, 100];
+$registros_por_pagina = isset($_GET['limite']) ? intval($_GET['limite']) : 10;
+if (!in_array($registros_por_pagina, $allowed_page_sizes, true)) {
+    $registros_por_pagina = 10;
+}
 $pagina_actual = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
 $offset = ($pagina_actual - 1) * $registros_por_pagina;
 $has_nivel_inicial = false;
@@ -85,6 +89,36 @@ function buildEditUrl($id, $token) {
         $basePath = '';
     }
     return $protocol . '://' . $host . $basePath . '/index.php?action=editar&id=' . (int)$id . '&token=' . urlencode($token);
+}
+
+function buildPaginationSequence($current, $total, $window = 2) {
+    $pages = [];
+    if ($total <= 1) {
+        return [1];
+    }
+
+    $start = max(1, $current - $window);
+    $end = min($total, $current + $window);
+
+    if ($start > 1) {
+        $pages[] = 1;
+        if ($start > 2) {
+            $pages[] = null;
+        }
+    }
+
+    for ($i = $start; $i <= $end; $i++) {
+        $pages[] = $i;
+    }
+
+    if ($end < $total) {
+        if ($end < $total - 1) {
+            $pages[] = null;
+        }
+        $pages[] = $total;
+    }
+
+    return $pages;
 }
 
 // 3. GUARDAR EL REGISTRO
@@ -274,6 +308,10 @@ if ($pdo) {
     $stmtCount->execute($params);
     $total_registros = $stmtCount->fetchColumn();
     $total_paginas = max(1, ceil($total_registros / $registros_por_pagina));
+    if ($pagina_actual > $total_paginas) {
+        $pagina_actual = $total_paginas;
+        $offset = ($pagina_actual - 1) * $registros_por_pagina;
+    }
 
     // 2. Obtener las columnas y registros limitados para la página actual
     $selectCols = ['t.id', 'g.nombre AS gerencia', 'a.nombre AS area', 't.actividad', 't.ubicacion', 't.responsable', 't.fecha', 't.permisos_requeridos', 't.nivel_riesgo', 't.edit_token'];
@@ -308,11 +346,14 @@ if ($pdo) {
 }
 
 // Función auxiliar para mantener parámetros de filtros al cambiar de página
-function buildQueryString($page, $f_gerencia = 0, $f_area = 0, $f_estado = '') {
+function buildQueryString($page, $f_gerencia = 0, $f_area = 0, $f_estado = '', $limite = 10) {
     $query = ['pagina' => $page];
     if ($f_gerencia > 0) $query['filtro_gerencia'] = $f_gerencia;
     if ($f_area > 0) $query['filtro_area'] = $f_area;
     if ($f_estado !== '') $query['filtro_estado'] = $f_estado;
+    if (in_array($limite, [10, 20, 50, 100], true)) {
+        $query['limite'] = $limite;
+    }
     return 'index.php?' . http_build_query($query);
 }
 ?>
