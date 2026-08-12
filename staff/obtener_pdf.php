@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
 
             $stmt = $pdo->prepare("INSERT INTO inspecciones (vehiculo_id, userID, nombre_conductor, odometro, hora, observaciones, estado, codigo_seguridad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$vehiculo_id, $nombre, $odometro, $hora, $observaciones, $estado_general, $codigo_seguridad]);
+            $stmt->execute([$vehiculo_id, $id_empleado, $nombre, $odometro, $hora, $observaciones, $estado_general, $codigo_seguridad]);
             $inspeccion_id = $pdo->lastInsertId();
 
             $stmtDetalle = $pdo->prepare("INSERT INTO detalles_inspeccion (inspeccion_id, parametro, resultado) VALUES (?, ?, ?)");
