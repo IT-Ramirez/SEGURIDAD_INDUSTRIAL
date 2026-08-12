@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $this->Rect($x, $y, 45, 20);
                         $logoPath = '../images/logo_limon.png';
                         if (file_exists($logoPath)) {
-                            $this->Image($logoPath, $x + 2, $y + 2, 41, 16);
+                            $this->Image($logoPath, $x + 2, $y + 6, 41, 0);
                         } else {
                             $this->SetFont('Arial', 'B', 8);
                             $this->SetXY($x, $y + 8);
