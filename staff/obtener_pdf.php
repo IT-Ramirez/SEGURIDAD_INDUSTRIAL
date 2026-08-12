@@ -1,5 +1,5 @@
 <?php
-include '/staff/config.php'; 
+include '../config.php'; 
 // Iniciar sesión para manejo de token CSRF y autenticación
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

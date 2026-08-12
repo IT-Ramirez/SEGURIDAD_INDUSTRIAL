@@ -1,5 +1,9 @@
 # === Archivos de Configuración Local / Entorno ===
 # Ignorar credenciales de bases de datos o llaves secretas locales
+.env
+.env.local
+config.local.php
+config.php
 
 # === Dependencias de Composer / Node ===
 # Si llegas a usar librerías de terceros, no deben subirse a GitHub
