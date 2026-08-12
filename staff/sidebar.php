@@ -4,9 +4,9 @@
         <small class="text-muted text-uppercase" style="font-size:0.7rem; letter-spacing:1px">Perfil Staff</small>
     </div>
     <ul class="nav flex-column my-3">
-        <li class="nav-item"><a href="index.php" class="nav-link active"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-        <li class="nav-item"><a href="index.php" class="nav-link"><i class="bi bi-clipboard-data"></i> Inspección</a></li>
-        <li class="nav-item"><a href="index.php" class="nav-link"><i class="bi bi-file-earmark-plus"></i> Formulario Staff</a></li>
+       
+        <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-clipboard-data"></i> Ver Inspección</a></li>
+        <li class="nav-item"><a href="index.php" class="nav-link"><i class="bi bi-file-earmark-plus"></i> Crear Inspección</a></li>
         <li class="nav-item mt-4"><span class="px-3 text-uppercase text-muted small fw-bold">Accesos</span></li>
     </ul>
     <div class="mt-auto p-3 bg-dark text-center border-top border-secondary">
