@@ -1,0 +1,32 @@
+{
+  "short_name": "SERVIAPP",
+  "name": "EQX-SERVIAPP",
+  "icons": [
+    {
+      "src": "/image/eqx.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192 512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/staff/dashboard/index.php",
+  "background_color": "#2c1d21",
+  "display": "standalone",
+  "theme_color": "#2c1d21",
+  "shortcuts": [
+    {
+      "name": "Módulo de Comedor",
+      "short_name": "Comedor",
+      "description": "Gestionar reservas y menú del comedor",
+      "url": "/comedor",
+      "icons": [{ "src": "/image/eqx.jpg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Control de Viajes",
+      "short_name": "Viajes",
+      "description": "Solicitudes de viaje y viáticos",
+      "url": "/viajes",
+      "icons": [{ "src": "/image/eqx.jpg", "sizes": "192x192" }]
+    }
+  ]
+}

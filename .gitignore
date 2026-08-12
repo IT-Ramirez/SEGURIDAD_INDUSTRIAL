@@ -1,0 +1,44 @@
+# === Archivos de Configuración Local / Entorno ===
+# Ignorar credenciales de bases de datos o llaves secretas locales
+.env
+.env.local
+config.local.php
+config.php
+
+# === Dependencias de Composer / Node ===
+# Si llegas a usar librerías de terceros, no deben subirse a GitHub
+/vendor/
+/node_modules/
+
+# === Archivos del Sistema Operativo ===
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# === IDEs y Editores de Código ===
+# Visual Studio Code, PhpStorm, Sublime, etc.
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === Archivos Temporales y Logs ===
+# Logs de errores de PHP o Nginx que se generan al depurar
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Caché y Almacenamiento Temporal ===
+.cache/
+/tmp/

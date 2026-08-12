@@ -5,7 +5,7 @@
     </div>
     <ul class="nav flex-column my-3">
        
-        <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-clipboard-data"></i> Ver Inspección</a></li>
+        <li class="nav-item"><a href="view.php" class="nav-link"><i class="bi bi-clipboard-data"></i> Ver Inspección</a></li>
         <li class="nav-item"><a href="index.php" class="nav-link"><i class="bi bi-file-earmark-plus"></i> Crear Inspección</a></li>
         <li class="nav-item mt-4"><span class="px-3 text-uppercase text-muted small fw-bold">Accesos</span></li>
     </ul>

@@ -1,6 +1,6 @@
 <?php
 // conexion.php
-$pdo = new PDO("mysql:host=localhost;dbname=checklist;charset=utf8", "root", "Tecnologias11-11");
+$pdo = new PDO("mysql:host=localhost;dbname=seguridad_industrial;charset=utf8", "root", "Tecnologias11-11");
 
 // Procesar eliminación si se solicita
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {

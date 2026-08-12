@@ -11,7 +11,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Configuración y conexión segura PDO
 $db_host = "localhost";
-$db_name = "checklist";
+$db_name = "seguridad_industrial";
 $db_user = "root";
 $db_pass = "Tecnologias11-11";
 
@@ -123,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $codigo_vehiculo = $vehiculo_data ? $vehiculo_data['codigo'] : 'N/A';
             $placa = $vehiculo_data ? $vehiculo_data['placa'] : 'N/A';
+            $id_empleado = $_SESSION['uid'] ?? null;
 
             // Generar código de seguridad para la inspección
             $codigo_seguridad = bin2hex(random_bytes(16));
@@ -130,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Transacción para consistencia de datos
             $pdo->beginTransaction();
 
-            $stmt = $pdo->prepare("INSERT INTO inspecciones (vehiculo_id, nombre_conductor, odometro, hora, observaciones, estado, codigo_seguridad) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO inspecciones (vehiculo_id, userID, nombre_conductor, odometro, hora, observaciones, estado, codigo_seguridad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$vehiculo_id, $nombre, $odometro, $hora, $observaciones, $estado_general, $codigo_seguridad]);
             $inspeccion_id = $pdo->lastInsertId();
 
@@ -150,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $y = $this->GetY();
                         
                         $this->Rect($x, $y, 45, 20);
-                        $logoPath = '../images/logo_limon.png';
+                        $logoPath = '../image/logo_limon.png';
                         if (file_exists($logoPath)) {
                             $this->Image($logoPath, $x + 2, $y + 6, 41, 0);
                         } else {
