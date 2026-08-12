@@ -1,8 +1,11 @@
 <?php
-// conexion.php
-$pdo = new PDO("mysql:host=localhost;dbname=seguridad_industrial;charset=utf8", "root", "Tecnologias11-11");
+require_once __DIR__ . '/../config.php';
 
-// Procesar eliminación si se solicita
+// 2. Pass the variables DIRECTLY without quotes around them
+$dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
+$pdo = new PDO($dsn, $username, $password);
+
+  // Procesar eliminación si se solicita
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     $pdo->prepare("DELETE FROM detalles_inspeccion WHERE inspeccion_id = ?")->execute([$id]);

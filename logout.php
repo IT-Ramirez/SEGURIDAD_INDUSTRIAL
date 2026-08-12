@@ -1,5 +1,5 @@
 <?php
-include("../functions.php");
+include("functions.php");
 
 // Iniciar sesión si no está activa
 if (session_status() === PHP_SESSION_NONE) {
@@ -44,6 +44,6 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
 // Redirigir al login
-header("Location: ../login.php");
+header("Location: ./login.php");
 exit;
 ?>

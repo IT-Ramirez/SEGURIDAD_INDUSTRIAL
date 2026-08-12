@@ -1,11 +1,11 @@
 <?php
 include '../config.php'; 
-// Iniciar sesión para manejo de token CSRF y autenticación
+
+// 1. Iniciar sesión y garantizar el Token CSRF
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Generar Token CSRF si no existe
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -17,14 +17,74 @@ try {
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
 } catch (PDOException $e) {
-    error_log("Error de conexion: " . $e->getMessage());
+    error_log("Error de conexión: " . $e->getMessage());
     die("Error al conectar con la base de datos. Por favor consulte al administrador.");
 }
 
-// Cargar dependencias de Composer, incluida la librería FPDF
+// Cargar dependencias de Composer
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoloadPath)) {
     require_once $autoloadPath;
+}
+
+// Función auxiliar para codificar texto a ISO-8859-1 de forma compatible con PHP 8.2+
+function fpdf_txt(string $str): string {
+    return mb_convert_encoding($str, 'ISO-8859-1', 'UTF-8');
+}
+
+// Definición de la clase FPDF protegida contra redefinición
+if (class_exists('FPDF') && !class_exists('PDF_Formato')) {
+    class PDF_Formato extends FPDF {
+        function Header() {
+            $x = $this->GetX();
+            $y = $this->GetY();
+            
+            $this->Rect($x, $y, 45, 20);
+            $logoPath = '../image/logo_limon.png';
+            if (file_exists($logoPath)) {
+                $this->Image($logoPath, $x + 2, $y + 6, 41, 0);
+            } else {
+                $this->SetFont('Arial', 'B', 8);
+                $this->SetXY($x, $y + 8);
+                $this->Cell(45, 4, fpdf_txt('LOGO EMPRESA'), 0, 0, 'C');
+            }
+
+            $this->SetXY($x + 45, $y);
+            $this->SetFont('Arial', 'B', 10);
+            $this->Cell(95, 20, fpdf_txt('FORMATO DE INSPECCIÓN EQUIPO LIVIANO'), 1, 0, 'C');
+
+            $this->SetXY($x + 140, $y);
+            $this->SetFont('Arial', '', 7);
+            
+            $this->Cell(25, 5, fpdf_txt('Código:'), 'LTR', 0, 'L');
+            $this->SetFont('Arial', 'B', 7);
+            $this->Cell(25, 5, fpdf_txt('01-FOR-037'), 'TR', 1, 'C');
+            
+            $this->SetX($x + 140);
+            $this->SetFont('Arial', '', 7);
+            $this->Cell(25, 5, fpdf_txt('Revisión:'), 'LR', 0, 'L');
+            $this->SetFont('Arial', 'B', 7);
+            $this->Cell(25, 5, fpdf_txt('0.0'), 'R', 1, 'C');
+
+            $this->SetX($x + 140);
+            $this->SetFont('Arial', '', 7);
+            $this->Cell(25, 5, fpdf_txt('Fecha de emisión:'), 'LR', 0, 'L');
+            $this->Cell(25, 5, fpdf_txt('12-oct-18'), 'R', 1, 'C');
+
+            $this->SetX($x + 140);
+            $this->Cell(25, 5, fpdf_txt('Página:'), 'LBR', 0, 'L');
+            $this->Cell(25, 5, $this->PageNo() . ' de {nb}', 'BR', 1, 'C');
+
+            $this->Ln(3);
+        }
+
+        function Footer() {
+            $this->SetY(-18);
+            $this->SetFont('Arial', 'I', 7);
+            $this->SetFillColor(245, 245, 245);
+            $this->MultiCell(0, 3.5, fpdf_txt("Importante: Realice una inspección 360° de su equipo móvil antes de ponerlo en marcha.\nEn caso de relevo de operador/conductor, el que recibe debe validar la inspección realizada."), 1, 'C', true);
+        }
+    }
 }
 
 // Lista de parámetros con sus opciones específicas
@@ -70,18 +130,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // 1. Validar Token CSRF
     $token_post = $_POST['csrf_token'] ?? '';
-    if (!hash_equals($_SESSION['csrf_token'], $token_post)) {
+    if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token_post)) {
         die("Error de validación de seguridad (Token CSRF no válido).");
     }
 
-    // 2. Sanitización y Validación estricta de Entradas
+    // 2. Sanitización y Validación estricta
     $vehiculo_id = filter_input(INPUT_POST, 'vehiculo_id', FILTER_VALIDATE_INT);
     $odometro = filter_input(INPUT_POST, 'odometro', FILTER_VALIDATE_INT);
     $nombre = trim(filter_input(INPUT_POST, 'nombre', FILTER_SANITIZE_SPECIAL_CHARS) ?? '');
     $hora = trim(filter_input(INPUT_POST, 'hora', FILTER_SANITIZE_SPECIAL_CHARS) ?? date('H:i'));
     $observaciones = trim(filter_input(INPUT_POST, 'observaciones', FILTER_SANITIZE_SPECIAL_CHARS) ?? '');
     
-    // Sanitizar y validar array de respuestas
     $raw_respuestas = $_POST['evaluacion'] ?? [];
     $respuestas = [];
     
@@ -93,11 +152,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!$vehiculo_id || !$odometro || empty($nombre)) {
+    if (!$vehiculo_id || $odometro === false || $odometro < 0 || empty($nombre)) {
         $error = "Por favor ingrese todos los datos obligatorios correctamente.";
     } else {
         try {
-            // Evaluamos si las primeras 13 opciones son marcadas como 'C'
+            // Evaluamos si las primeras 13 opciones son 'C'
             $primeras_13_correctas = true;
             for ($i = 0; $i < 13; $i++) {
                 if (($respuestas[$i] ?? '') !== 'C') {
@@ -106,9 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            // Dictamen de aptitud
             $dictamen_aptitud = $primeras_13_correctas ? 'APTO PARA CONDUCIR' : 'NO APTO PARA CONDUCIR';
-
             $estado_general = in_array('I', $respuestas, true) ? 'Con Fallas' : 'Aprobado';
 
             // Obtener datos del vehículo
@@ -120,10 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $placa = $vehiculo_data ? $vehiculo_data['placa'] : 'N/A';
             $id_empleado = $_SESSION['uid'] ?? null;
 
-            // Generar código de seguridad para la inspección
             $codigo_seguridad = bin2hex(random_bytes(16));
 
-            // Transacción para consistencia de datos
+            // Transacción DB
             $pdo->beginTransaction();
 
             $stmt = $pdo->prepare("INSERT INTO inspecciones (vehiculo_id, userID, nombre_conductor, odometro, hora, observaciones, estado, codigo_seguridad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -139,59 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->commit();
 
             // GENERAR PDF
-            if (isset($_POST['generar_pdf']) && class_exists('FPDF')) {
-                class PDF_Formato extends FPDF {
-                    function Header() {
-                        $x = $this->GetX();
-                        $y = $this->GetY();
-                        
-                        $this->Rect($x, $y, 45, 20);
-                        $logoPath = '../image/logo_limon.png';
-                        if (file_exists($logoPath)) {
-                            $this->Image($logoPath, $x + 2, $y + 6, 41, 0);
-                        } else {
-                            $this->SetFont('Arial', 'B', 8);
-                            $this->SetXY($x, $y + 8);
-                            $this->Cell(45, 4, utf8_decode('LOGO EMPRESA'), 0, 0, 'C');
-                        }
-
-                        $this->SetXY($x + 45, $y);
-                        $this->SetFont('Arial', 'B', 10);
-                        $this->Cell(95, 20, utf8_decode('FORMATO DE INSPECCIÓN EQUIPO LIVIANO'), 1, 0, 'C');
-
-                        $this->SetXY($x + 140, $y);
-                        $this->SetFont('Arial', '', 7);
-                        
-                        $this->Cell(25, 5, utf8_decode('Código:'), 'LTR', 0, 'L');
-                        $this->SetFont('Arial', 'B', 7);
-                        $this->Cell(25, 5, utf8_decode('01-FOR-037'), 'TR', 1, 'C');
-                        
-                        $this->SetX($x + 140);
-                        $this->SetFont('Arial', '', 7);
-                        $this->Cell(25, 5, utf8_decode('Revisión:'), 'LR', 0, 'L');
-                        $this->SetFont('Arial', 'B', 7);
-                        $this->Cell(25, 5, utf8_decode('0.0'), 'R', 1, 'C');
-
-                        $this->SetX($x + 140);
-                        $this->SetFont('Arial', '', 7);
-                        $this->Cell(25, 5, utf8_decode('Fecha de emisión:'), 'LR', 0, 'L');
-                        $this->Cell(25, 5, utf8_decode('12-oct-18'), 'R', 1, 'C');
-
-                        $this->SetX($x + 140);
-                        $this->Cell(25, 5, utf8_decode('Página:'), 'LBR', 0, 'L');
-                        $this->Cell(25, 5, $this->PageNo() . ' de {nb}', 'BR', 1, 'C');
-
-                        $this->Ln(3);
-                    }
-
-                    function Footer() {
-                        $this->SetY(-18);
-                        $this->SetFont('Arial', 'I', 7);
-                        $this->SetFillColor(245, 245, 245);
-                        $this->MultiCell(0, 3.5, utf8_decode("Importante: Realice una inspección 360° de su equipo móvil antes de ponerlo en marcha.\nEn caso de relevo de operador/conductor, el que recibe debe validar la inspección realizada."), 1, 'C', true);
-                    }
-                }
-
+            if (isset($_POST['generar_pdf']) && class_exists('PDF_Formato')) {
                 $pdf = new PDF_Formato('P', 'mm', 'A4');
                 $pdf->AliasNbPages();
                 $pdf->SetMargins(10, 10, 10);
@@ -200,50 +204,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdf->SetFont('Arial', 'B', 8);
                 $pdf->SetFillColor(230, 230, 230);
                 
-                $pdf->Cell(25, 6, utf8_decode('Placa:'), 1, 0, 'L', true);
+                $pdf->Cell(25, 6, fpdf_txt('Placa:'), 1, 0, 'L', true);
                 $pdf->SetFont('Arial', '', 8);
-                $pdf->Cell(35, 6, utf8_decode($placa), 1, 0, 'C');
+                $pdf->Cell(35, 6, fpdf_txt($placa), 1, 0, 'C');
                 
                 $pdf->SetFont('Arial', 'B', 8);
-                $pdf->Cell(35, 6, utf8_decode('Código del Vehículo:'), 1, 0, 'L', true);
+                $pdf->Cell(35, 6, fpdf_txt('Código del Vehículo:'), 1, 0, 'L', true);
                 $pdf->SetFont('Arial', '', 8);
-                $pdf->Cell(30, 6, utf8_decode($codigo_vehiculo), 1, 0, 'C');
+                $pdf->Cell(30, 6, fpdf_txt($codigo_vehiculo), 1, 0, 'C');
 
                 $pdf->SetFont('Arial', 'B', 8);
-                $pdf->Cell(15, 6, utf8_decode('Hora:'), 1, 0, 'L', true);
+                $pdf->Cell(15, 6, fpdf_txt('Hora:'), 1, 0, 'L', true);
                 $pdf->SetFont('Arial', '', 8);
-                $pdf->Cell(18, 6, utf8_decode($hora), 1, 0, 'C');
+                $pdf->Cell(18, 6, fpdf_txt($hora), 1, 0, 'C');
 
                 $pdf->SetFont('Arial', 'B', 8);
-                $pdf->Cell(17, 6, utf8_decode('Odómetro:'), 1, 0, 'L', true);
+                $pdf->Cell(17, 6, fpdf_txt('Odómetro:'), 1, 0, 'L', true);
                 $pdf->SetFont('Arial', '', 8);
-                $pdf->Cell(15, 6, utf8_decode((string)$odometro), 1, 1, 'C');
+                $pdf->Cell(15, 6, fpdf_txt((string)$odometro), 1, 1, 'C');
 
                 $pdf->SetFont('Arial', 'B', 8);
-                $pdf->Cell(25, 6, utf8_decode('Nombre:'), 1, 0, 'L', true);
+                $pdf->Cell(25, 6, fpdf_txt('Nombre:'), 1, 0, 'L', true);
                 $pdf->SetFont('Arial', '', 8);
-                $pdf->Cell(70, 6, utf8_decode($nombre), 1, 0, 'L');
+                $pdf->Cell(70, 6, fpdf_txt($nombre), 1, 0, 'L');
 
                 $pdf->SetFont('Arial', 'B', 7);
-                $pdf->Cell(95, 6, utf8_decode('Leyenda: [ C ] Correcto   |   [ I ] Incorrecto   |   [ N/A ] No Aplicable'), 1, 1, 'C', true);
+                $pdf->Cell(95, 6, fpdf_txt('Leyenda: [ C ] Correcto   |   [ I ] Incorrecto   |   [ N/A ] No Aplicable'), 1, 1, 'C', true);
 
-                // --- CASILLA DE ESTADO / DICTAMEN DE CONDUCCIÓN ---
+                // --- ESTADO / DICTAMEN ---
                 $pdf->Ln(2);
                 $pdf->SetFont('Arial', 'B', 8);
-                $pdf->Cell(45, 6, utf8_decode('ESTADO DEL VEHÍCULO:'), 1, 0, 'L', true);
+                $pdf->Cell(45, 6, fpdf_txt('ESTADO DEL VEHÍCULO:'), 1, 0, 'L', true);
                 
                 if ($primeras_13_correctas) {
-                    $pdf->SetFillColor(220, 245, 220); // Fondo verde claro
-                    $pdf->SetTextColor(0, 100, 0);      // Texto verde oscuro
+                    $pdf->SetFillColor(220, 245, 220);
+                    $pdf->SetTextColor(0, 100, 0);
                 } else {
-                    $pdf->SetFillColor(255, 220, 220); // Fondo rojo claro
-                    $pdf->SetTextColor(180, 0, 0);      // Texto rojo oscuro
+                    $pdf->SetFillColor(255, 220, 220);
+                    $pdf->SetTextColor(180, 0, 0);
                 }
                 
                 $pdf->SetFont('Arial', 'B', 9);
-                $pdf->Cell(145, 6, utf8_decode($dictamen_aptitud), 1, 1, 'C', true);
+                $pdf->Cell(145, 6, fpdf_txt($dictamen_aptitud), 1, 1, 'C', true);
                 
-                // Restablecer colores estándar
                 $pdf->SetTextColor(0, 0, 0);
                 $pdf->SetFillColor(230, 230, 230);
 
@@ -252,8 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdf->SetFont('Arial', 'B', 8);
                 $pdf->SetFillColor(28, 32, 36);
                 $pdf->SetTextColor(255, 255, 255);
-                $pdf->Cell(145, 6, utf8_decode('Parámetros a Inspeccionar'), 1, 0, 'L', true);
-                $pdf->Cell(45, 6, utf8_decode('Resultado'), 1, 1, 'C', true);
+                $pdf->Cell(145, 6, fpdf_txt('Parámetros a Inspeccionar'), 1, 0, 'L', true);
+                $pdf->Cell(45, 6, fpdf_txt('Resultado'), 1, 1, 'C', true);
 
                 $pdf->SetTextColor(0, 0, 0);
                 $pdf->SetFont('Arial', '', 7.5);
@@ -272,18 +275,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $pdf->SetFillColor(240, 240, 240);
                     }
 
-                    $pdf->Cell(145, 4.8, utf8_decode(($i + 1) . '. ' . $item['nombre']), 1, 0, 'L');
-                    $pdf->Cell(45, 4.8, utf8_decode($texto_res), 1, 1, 'C', true);
+                    $pdf->Cell(145, 4.8, fpdf_txt(($i + 1) . '. ' . $item['nombre']), 1, 0, 'L');
+                    $pdf->Cell(45, 4.8, fpdf_txt($texto_res), 1, 1, 'C', true);
                 }
 
                 $pdf->Ln(2);
                 $pdf->SetFont('Arial', 'B', 8);
-                $pdf->Cell(0, 4, utf8_decode('Notas / Observaciones:'), 0, 1, 'L');
+                $pdf->Cell(0, 4, fpdf_txt('Notas / Observaciones:'), 0, 1, 'L');
                 $pdf->SetFont('Arial', '', 7.5);
                 $obsText = !empty($observaciones) ? $observaciones : 'Sin observaciones registradas.';
-                $pdf->MultiCell(0, 4, utf8_decode($obsText), 1, 'L');
+                $pdf->MultiCell(0, 4, fpdf_txt($obsText), 1, 'L');
 
-                $pdf->Output('D', 'Inspeccion_'.preg_replace('/[^a-zA-Z0-9_\-]/', '', $codigo_vehiculo).'_'.date('Ymd_His').'.pdf');
+                $filename = 'Inspeccion_' . preg_replace('/[^a-zA-Z0-9_\-]/', '', $codigo_vehiculo) . '_' . date('Ymd_His') . '.pdf';
+                $pdf->Output('D', $filename);
                 exit;
             }
 
@@ -292,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            error_log("Error al procesar inspeccion: " . $e->getMessage());
+            error_log("Error al procesar inspección: " . $e->getMessage());
             $error = "Ocurrió un error al procesar el registro.";
         }
     }
@@ -301,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $vehiculos = $pdo->query("SELECT id, codigo, placa FROM vehiculos")->fetchAll();
 } catch (PDOException $e) {
-    error_log("Error al obtener vehiculos: " . $e->getMessage());
+    error_log("Error al obtener vehículos: " . $e->getMessage());
     $vehiculos = [];
 }
 ?>
