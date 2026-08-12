@@ -1,4 +1,5 @@
 <?php
+include '/staff/config.php'; 
 // Iniciar sesión para manejo de token CSRF y autenticación
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -9,14 +10,8 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Configuración y conexión segura PDO
-$db_host = "localhost";
-$db_name = "seguridad_industrial";
-$db_user = "root";
-$db_pass = "Tecnologias11-11";
-
 try {
-    $pdo = new PDO("mysql:host={$db_host};dbname={$db_name};charset=utf8mb4", $db_user, $db_pass, [
+    $pdo = new PDO("mysql:host={$servername};dbname={$dbname};charset=utf8mb4", $username, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
