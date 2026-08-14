@@ -67,12 +67,12 @@
     </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Código del Vehículo:</label>
-                                    <input type="text" id="codigo_vehiculo" class="form-control" placeholder="Ejemp: UG-01" required>
+                                    <input type="text" name="codigo_vehiculo" id="codigo_vehiculo" class="form-control" placeholder="Ejemp: UG-01">
                                 </div>
                                <div class="col-md-2">
     <label class="form-label fw-semibold">Hora:</label>
     <input type="text" name="hora" class="form-control" value="<?= htmlspecialchars(date('H:i A'), ENT_QUOTES, 'UTF-8') ?>" readonly>
-     </div>
+</div>
                                 <div class="col-md-2">
                                     <label class="form-label fw-semibold">Odómetro (KM):</label>
                                     <input type="number" name="odometro" class="form-control" required placeholder="Ej: 125000" min="0" step="1">
@@ -144,6 +144,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+
+    /*
 function actualizarCodigo() {
     const select = document.getElementById('vehiculo_id');
     const selectedOption = select.options[select.selectedIndex];
@@ -155,7 +157,7 @@ function actualizarCodigo() {
         codigoInput.value = '';
     }
 }
-
+*/
 // Toggle Sidebar
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('sidebar');

@@ -4,7 +4,7 @@ include '../config.php';
 // 1. Iniciar sesión y garantizar el Token CSRF
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-    $nombre_usuario = $_SESSION['nombre_usuario'] ?? $_SESSION['nombre'] ?? 'Usuario';
+    
 }
 
 if (empty($_SESSION['csrf_token'])) {
@@ -136,7 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 2. Sanitización y Validación estricta
-    $vehiculo_id = filter_input(INPUT_POST, 'vehiculo_id', FILTER_VALIDATE_INT);
+    $vehiculo_input = trim((string)($_POST['vehiculo_id'] ?? ''));
+    $codigo_vehiculo_input = trim((string)($_POST['codigo_vehiculo'] ?? ''));
+    $vehiculo_busqueda = $vehiculo_input !== '' ? $vehiculo_input : $codigo_vehiculo_input;
     $odometro = filter_input(INPUT_POST, 'odometro', FILTER_VALIDATE_INT);
     $nombre = trim(filter_input(INPUT_POST, 'nombre', FILTER_SANITIZE_SPECIAL_CHARS) ?? '');
     $hora = trim(filter_input(INPUT_POST, 'hora', FILTER_SANITIZE_SPECIAL_CHARS) ?? date('H:i'));
@@ -153,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!$vehiculo_id || $odometro === false || $odometro < 0 || empty($nombre)) {
+    if ($vehiculo_busqueda === '' || $odometro === false || $odometro < 0 || empty($nombre)) {
         $error = "Por favor ingrese todos los datos obligatorios correctamente.";
     } else {
         try {
@@ -169,13 +171,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dictamen_aptitud = $primeras_13_correctas ? 'APTO PARA CONDUCIR' : 'NO APTO PARA CONDUCIR';
             $estado_general = in_array('I', $respuestas, true) ? 'Con Fallas' : 'Aprobado';
 
-            // Obtener datos del vehículo
-            $stmtVeh = $pdo->prepare("SELECT codigo, placa FROM vehiculos WHERE id = ?");
-            $stmtVeh->execute([$vehiculo_id]);
+            // Obtener datos del vehículo aceptando ID, placa o código
+            $stmtVeh = $pdo->prepare("SELECT id, codigo, placa FROM vehiculos WHERE id = ? OR placa = ? OR codigo = ? LIMIT 1");
+            $stmtVeh->execute([$vehiculo_busqueda, $vehiculo_busqueda, $vehiculo_busqueda]);
             $vehiculo_data = $stmtVeh->fetch();
 
-            $codigo_vehiculo = $vehiculo_data ? $vehiculo_data['codigo'] : 'N/A';
-            $placa = $vehiculo_data ? $vehiculo_data['placa'] : 'N/A';
+            if (!$vehiculo_data) {
+                throw new Exception('Vehículo no encontrado. Verifique la placa o código ingresado.');
+            }
+
+            $vehiculo_id = (int)$vehiculo_data['id'];
+            $codigo_vehiculo = $vehiculo_data['codigo'];
+            $placa = $vehiculo_data['placa'];
             $id_empleado = $_SESSION['uid'] ?? null;
 
             $codigo_seguridad = bin2hex(random_bytes(16));
