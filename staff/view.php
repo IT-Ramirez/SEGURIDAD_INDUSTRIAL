@@ -1,12 +1,14 @@
 <?php
-include '../config.php';
+session_start();
+include_once('../session_check.php');
+include '../config.php'; 
 $pdo = new PDO("mysql:host={$servername};dbname={$dbname};charset=utf8", $username, $password);
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die('ID de inspección inválido.');
 }
 
-$id = $_SESSION['uid'];
+$id = (int)$_GET['id'];
 
 $stmt = $pdo->prepare(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa

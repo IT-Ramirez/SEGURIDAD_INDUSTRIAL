@@ -1,0 +1,592 @@
+
+        :root {
+            --eqx-dark: #1561a7;
+            --eqx-dark-2: #0b5690;
+            --eqx-gold: #d4a017;
+            --eqx-gold-hover: #b8890f;
+            --eqx-light: #f4f6f8;
+            --eqx-border: #dee2e6;
+            --eqx-success: #198754;
+            --eqx-danger: #dc3545;
+            --eqx-secondary: #6c757d;
+        }
+
+        /* ======================================================
+           ESTRUCTURA GENERAL
+           ====================================================== */
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            background: #f4f6f8;
+            color: #263238;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        #wrapper {
+            min-height: 100vh;
+        }
+
+        #content-wrapper,
+        .container-fluid {
+            width: 100%;
+        }
+
+        .container-fluid {
+            padding-left: clamp(12px, 2vw, 30px);
+            padding-right: clamp(12px, 2vw, 30px);
+        }
+
+        /* ======================================================
+           BREADCRUMB
+           ====================================================== */
+
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0 0 15px 0;
+            font-size: 0.88rem;
+        }
+
+        .breadcrumb a {
+            color: #52616b;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--eqx-gold);
+        }
+
+        .breadcrumb-item.active {
+            color: #7a8790;
+        }
+
+        /* ======================================================
+           ENCABEZADO DE PÁGINA
+           ====================================================== */
+
+        .page-title-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: clamp(1.45rem, 2.5vw, 2rem);
+            font-weight: 700;
+            color: var(--eqx-dark);
+        }
+
+        .page-subtitle {
+            margin: 6px 0 0;
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .page-divider {
+            margin-top: 15px;
+            border: 0;
+            border-top: 1px solid #dfe3e6;
+        }
+
+        /* ======================================================
+           BOTÓN NUEVA INSPECCIÓN
+           ====================================================== */
+
+        .btn-eqx-gold {
+            background: var(--eqx-gold);
+            border-color: var(--eqx-gold);
+            color: #fff;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-eqx-gold:hover,
+        .btn-eqx-gold:focus {
+            background: var(--eqx-gold-hover);
+            border-color: var(--eqx-gold-hover);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* ======================================================
+           TARJETA PRINCIPAL
+           ====================================================== */
+
+        .checklist-card {
+            border: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow:
+                0 4px 18px rgba(0, 0, 0, 0.07),
+                0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .checklist-card-body {
+            padding: clamp(18px, 3vw, 35px);
+        }
+
+        /* ======================================================
+           ENCABEZADO DEL FORMULARIO
+           ====================================================== */
+
+        .inspection-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .inspection-title {
+            margin: 0;
+            color: var(--eqx-dark);
+            font-size: clamp(1.15rem, 2vw, 1.55rem);
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .inspection-subtitle {
+            display: block;
+            margin-top: 5px;
+            color: #727d85;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+
+        .inspection-code {
+            flex-shrink: 0;
+            padding: 8px 15px;
+            background: var(--eqx-dark);
+            border-radius: 7px;
+            color: #ffc107;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+
+        /* ======================================================
+           ALERTAS
+           ====================================================== */
+
+        .alert {
+            border-radius: 10px;
+        }
+
+        /* ======================================================
+           SECCIÓN DE INFORMACIÓN
+           ====================================================== */
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 5px 0 17px;
+            color: var(--eqx-dark);
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .section-title i {
+            color: var(--eqx-gold);
+        }
+
+        /* ======================================================
+           FORMULARIOS
+           ====================================================== */
+
+        .form-label {
+            color: #35424b;
+            font-size: 0.88rem;
+            margin-bottom: 7px;
+        }
+
+        .form-control,
+        .form-select {
+            min-height: 44px;
+            border: 1px solid #d5dbe0;
+            border-radius: 8px;
+            color: #263238;
+            background-color: #fff;
+            font-size: 0.92rem;
+            box-shadow: none;
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--eqx-gold);
+            box-shadow: 0 0 0 0.18rem rgba(212, 160, 23, 0.15);
+        }
+
+        .form-control[readonly] {
+            background-color: #f5f6f7;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* ======================================================
+           TABLA DE PARÁMETROS
+           ====================================================== */
+
+        .inspection-table-wrapper {
+            border: 1px solid #e1e5e8;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .table-eqx {
+            margin: 0;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-eqx thead th {
+            background: var(--eqx-dark);
+            color: #fff;
+            border: 0;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            vertical-align: middle;
+        }
+
+        .table-eqx tbody td {
+            border-color: #e9ecef;
+            background: #fff;
+            vertical-align: middle;
+        }
+
+        .table-eqx tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .table-eqx tbody tr:hover td {
+            background: #fafbfc;
+        }
+
+        .parameter-number {
+            display: inline-block;
+            min-width: 30px;
+            color: #929ba2;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .parameter-name {
+            color: #263238;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* ======================================================
+           BOTONES DE ESTADO
+           ====================================================== */
+
+        .status-group {
+            display: inline-flex;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+        }
+
+        .status-group .btn {
+            min-width: 92px;
+            min-height: 38px;
+            border-radius: 7px !important;
+            border-width: 1px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.18s ease;
+        }
+
+        .status-group .btn-check:checked + .btn {
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-outline-correct {
+            color: var(--eqx-success);
+            border-color: var(--eqx-success);
+            background: #fff;
+        }
+
+        .btn-outline-correct:hover,
+        .btn-check:checked + .btn-outline-correct {
+            color: #fff;
+            background: var(--eqx-success);
+            border-color: var(--eqx-success);
+        }
+
+        .btn-outline-incorrect {
+            color: var(--eqx-danger);
+            border-color: var(--eqx-danger);
+            background: #fff;
+        }
+
+        .btn-outline-incorrect:hover,
+        .btn-check:checked + .btn-outline-incorrect {
+            color: #fff;
+            background: var(--eqx-danger);
+            border-color: var(--eqx-danger);
+        }
+
+        .btn-outline-na {
+            color: var(--eqx-secondary);
+            border-color: var(--eqx-secondary);
+            background: #fff;
+        }
+
+        .btn-outline-na:hover,
+        .btn-check:checked + .btn-outline-na {
+            color: #fff;
+            background: var(--eqx-secondary);
+            border-color: var(--eqx-secondary);
+        }
+
+        /* ======================================================
+           OBSERVACIONES
+           ====================================================== */
+
+        .observations-wrapper {
+            margin-top: 25px;
+        }
+
+        /* ======================================================
+           BOTÓN DE ENVÍO
+           ====================================================== */
+
+        .btn-action-area {
+            margin-top: 25px;
+            padding-top: 22px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-submit {
+            min-height: 52px;
+            border-radius: 9px;
+            font-size: 1rem;
+            letter-spacing: 0.1px;
+        }
+
+        /* ======================================================
+           RESPONSIVE - TABLET
+           ====================================================== */
+
+        @media (max-width: 992px) {
+
+            .inspection-header {
+                align-items: flex-start;
+            }
+
+            .table-eqx thead th:nth-child(2) {
+                width: 310px !important;
+            }
+
+            .status-group {
+                flex-wrap: wrap;
+            }
+
+            .status-group .btn {
+                min-width: 85px;
+            }
+        }
+
+        /* ======================================================
+           RESPONSIVE - MÓVIL
+           ====================================================== */
+
+        @media (max-width: 767px) {
+
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .page-title {
+                font-size: 1.35rem;
+            }
+
+            .page-subtitle {
+                font-size: 0.87rem;
+            }
+
+            .top-action-wrapper {
+                display: block !important;
+            }
+
+            .top-action-wrapper .btn {
+                width: 100%;
+                margin-top: 12px;
+            }
+
+            .checklist-card {
+                border-radius: 10px;
+            }
+
+            .checklist-card-body {
+                padding: 16px;
+            }
+
+            .inspection-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .inspection-code {
+                font-size: 0.78rem;
+            }
+
+            /*
+             * En móviles convertimos la tabla en una presentación
+             * más cómoda para lectura.
+             */
+            .inspection-table-wrapper {
+                border-radius: 8px;
+            }
+
+            .table-eqx {
+                min-width: 650px;
+            }
+
+            .table-eqx thead th {
+                font-size: 0.75rem;
+            }
+
+            .table-eqx tbody td {
+                font-size: 0.84rem;
+            }
+
+            .status-group {
+                flex-wrap: nowrap;
+            }
+
+            .status-group .btn {
+                min-width: 80px;
+                padding-left: 7px;
+                padding-right: 7px;
+                font-size: 0.74rem;
+            }
+
+            .btn-submit {
+                min-height: 50px;
+                font-size: 0.92rem;
+            }
+        }
+
+        /* ======================================================
+           MÓVILES MUY PEQUEÑOS
+           ====================================================== */
+
+        @media (max-width: 480px) {
+
+            .checklist-card-body {
+                padding: 13px;
+            }
+
+            .inspection-title {
+                font-size: 1.08rem;
+            }
+
+            .inspection-subtitle {
+                font-size: 0.7rem;
+            }
+
+            .inspection-code {
+                padding: 7px 11px;
+            }
+
+            .section-title {
+                font-size: 0.98rem;
+            }
+
+            .form-label {
+                font-size: 0.83rem;
+            }
+
+            .form-control,
+            .form-select {
+                min-height: 42px;
+                font-size: 0.87rem;
+            }
+
+            .status-group .btn {
+                min-width: 72px;
+                font-size: 0.7rem;
+            }
+        }
+
+        /* ======================================================
+           IMPRESIÓN
+           ====================================================== */
+
+        @media print {
+
+            body {
+                background: #fff !important;
+            }
+
+            #sidebar,
+            nav,
+            .breadcrumb,
+            .page-title-wrapper,
+            .btn-action-area,
+            .top-action-wrapper,
+            footer {
+                display: none !important;
+            }
+
+            #wrapper,
+            .container-fluid {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .checklist-card {
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+            }
+
+            .checklist-card-body {
+                padding: 15px !important;
+            }
+
+            .inspection-header {
+                margin-bottom: 15px;
+            }
+
+            .table-eqx {
+                min-width: 0 !important;
+            }
+
+            .table-eqx thead th {
+                background: #eee !important;
+                color: #000 !important;
+            }
+        }

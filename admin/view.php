@@ -1,5 +1,7 @@
 <?php
-$pdo = new PDO("mysql:host=localhost;dbname=checklist;charset=utf8", "root", "Tecnologias11-11");
+include '../config.php'; 
+
+$pdo = new PDO("mysql:host=localhost;dbname=seguridad_industrial;charset=utf8", "", "Tecnologias11-11");
 
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die('ID de inspección inválido.');

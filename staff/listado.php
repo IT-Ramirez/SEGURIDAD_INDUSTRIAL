@@ -1,4 +1,6 @@
 <?php
+session_start();
+include_once '../session_check.php';
 require_once __DIR__ . '/../config.php';
 
 // 2. Pass the variables DIRECTLY without quotes around them
@@ -18,7 +20,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 $inspecciones = $pdo->query(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa
     FROM inspecciones i
-    LEFT JOIN vehiculos v ON v.id = i.vehiculo_id
+    LEFT JOIN vehiculos v ON v.id = i.vehiculo_id WHERE i.userID = {$_SESSION['uid']}
     ORDER BY i.fecha_registro DESC"
 )->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -184,8 +186,6 @@ $inspecciones = $pdo->query(
 <body>
 
 <div class="wrapper">
-    <!-- 1. SIDEBAR -->
-    <?php include 'sidebar.php'; ?>
 
     <!-- MAIN CONTENT AREA -->
     <div class="main-content">
@@ -270,9 +270,7 @@ $inspecciones = $pdo->query(
                                                     <a href="view.php?id=<?= $insp['id'] ?>" class="btn btn-outline-primary" title="Ver detalles">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <a href="?delete=<?= $insp['id'] ?>" class="btn btn-outline-danger" onclick="return confirm('¿Eliminar esta inspección?');" title="Eliminar">
-                                                        <i class="bi bi-trash"></i>
-                                                    </a>
+                                                    
                                                 </div>
                                             </td>
                                         </tr>

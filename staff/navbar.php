@@ -1,15 +1,67 @@
- <div class="main-content">
-        <header class="top-navbar d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-2"><span class="fs-5 fw-semibold text-dark">Checklist Staff</span></div>
-            <div class="dropdown">
-                <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle fs-5 text-secondary"></i>
-                    <span class="d-none d-md-inline fw-medium">Staff</span>
+<div class="top-navbar-wrapper">
+    <div class="top-navbar">
+        <div class="navbar-left">
+            <a class="navbar-brand" href="index.php">
+                <i class="fas fa-home"></i> EQX - EQUINOX GOLD
+            </a>
+        </div>
+        
+        <div class="navbar-center">
+            <span class="navbar-username">Invitado</span>
+        </div>
+        
+        <div class="navbar-right">
+            <!-- Icono de notificaciones -->
+            <div class="navbar-item dropdown">
+                <button class="navbar-icon" id="notificationsDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-counter">0</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Perfil</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                </ul>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown">
+                    <h6 class="dropdown-header">Notificaciones</h6>
+                    <a class="dropdown-item" href="#">Sin notificaciones</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">Ver todas</a>
+                </div>
             </div>
-        </header>
+            
+            <!-- Icono de usuario -->
+            <div class="navbar-item dropdown">
+                <button class="navbar-icon" id="userDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Perfil</a>
+                    <a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Configuración</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para la interacción con servidor vía AJAX -->
+<script>
+    // Marcar notificaciones como leídas al hacer clic en el desplegable
+    document.getElementById('notificationsDropdown').addEventListener('click', function() {
+        fetch('marcar_notificaciones.php', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Notificaciones marcadas como leídas.');
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    // Actualización del contador en tiempo real cada 5 segundos
+    setInterval(() => {
+        fetch('obtener_contador.php')
+            .then(response => response.json())
+            .then(data => {
+                document.querySelector('.badge-counter').textContent = data.total_no_leidas;
+            })
+            .catch(error => console.error('Error al obtener el contador:', error));
+    }, 5000);
+</script>

@@ -4,63 +4,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist Staff - Equinox Gold</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        :root { 
-            --eqx-gold: #C59B27; 
-            --eqx-gold-hover: #A8821D; 
-            --eqx-dark: #1C2024; 
-            --eqx-gray-dark: #2A2F35; 
-            --eqx-bg-light: #F4F6F8; 
-            --sidebar-width: 260px; 
-        }
-        body { background-color: var(--eqx-bg-light); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
-        .wrapper { display:flex; width:100%; min-height:100vh; }
-        #sidebar { width:var(--sidebar-width); background:var(--eqx-dark); color:#fff; display:flex; flex-direction:column }
-        #sidebar .sidebar-header { padding:1.25rem 1.5rem; background:rgba(0,0,0,0.12); border-bottom:2px solid var(--eqx-gold); }
-        #sidebar .nav-link { color:#c2c7d0; padding:0.8rem 1.5rem; display:flex; gap:12px; }
-        #sidebar .nav-link.active, #sidebar .nav-link:hover { color:#fff; background:var(--eqx-gray-dark); border-left:4px solid var(--eqx-gold); }
-        .main-content { flex:1; display:flex; flex-direction:column; }
-        .top-navbar { background:#fff; border-bottom:1px solid #e3e6f0; padding:0.75rem 1.5rem }
-        .btn-eqx-gold { background:var(--eqx-gold); color:#fff; border:none; transition: all 0.2s; }
-        .btn-eqx-gold:hover { background:var(--eqx-gold-hover); color:#fff; }
-        .table-eqx thead { background:var(--eqx-dark); color:#fff }
-        .header-brand { border-bottom:3px solid var(--eqx-gold); padding-bottom:0.75rem }
-        
-        .status-group .btn-check + .btn {
-            font-size: 0.82rem;
-            font-weight: 600;
-            padding: 0.35rem 0.6rem;
-            border-radius: 6px;
-        }
-        .btn-outline-correct { border-color: #198754; color: #198754; }
-        .btn-check:checked + .btn-outline-correct { background-color: #198754; color: #fff; box-shadow: 0 2px 4px rgba(25, 135, 84, 0.3); }
-        .btn-outline-incorrect { border-color: #dc3545; color: #dc3545; }
-        .btn-check:checked + .btn-outline-incorrect { background-color: #dc3545; color: #fff; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3); }
-        .btn-outline-na { border-color: #6c757d; color: #6c757d; }
-        .btn-check:checked + .btn-outline-na { background-color: #6c757d; color: #fff; }
+  <title>Checklist Staff - Equinox Gold</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="icon" type="image/png" href="/image/eqx.jpg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="estilos.css">
+    </head>
 
-        @media print {
-            #sidebar, .top-navbar, .btn-action-area { display: none !important; }
-            .main-content { margin: 0; padding: 0; }
-            .card { border: none !important; box-shadow: none !important; }
-        }
-    </style>
-</head>
 <body>
 <div class="wrapper">
-    <?php include 'sidebar.php'; ?>
-    <?php include 'navbar.php'; ?>
-
         <main class="p-4">
-            <div class="container-fluid p-0">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <p class="text-muted m-0">Complete el checklist diario para el control vehicular.</p>
-                    <a href="index.php" class="btn btn-eqx-gold"><i class="bi bi-plus-circle me-1"></i> Nueva Inspección</a>
-                </div>
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <p class="text-muted m-0">
+            Complete el checklist diario para el control vehicular.
+        </p>
 
+        <div class="d-flex gap-2">
+            <a href="index.php" class="btn btn-eqx-gold">
+                <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
+            </a>
+
+            <a href="listado.php" class="btn btn-eqx-gold">
+                <i class="bi bi-list-check me-1"></i> Ver Inspecciones
+            </a>
+        </div>
+    </div>
+</div>
                 <div class="card border-0 shadow-sm rounded-3">
                     <div class="card-body p-4">
                         <div class="header-brand d-flex align-items-center justify-content-between mb-4">
@@ -90,23 +61,18 @@
                             <input type="hidden" name="generar_pdf" value="1">
 
                             <div class="row g-3 mb-4">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Vehículo / Placa:</label>
-                                    <select name="vehiculo_id" id="vehiculo_id" class="form-select" required onchange="actualizarCodigo()">
-                                        <option value="">Seleccione...</option>
-                                        <?php foreach ($vehiculos as $v): ?>
-                                            <option value="<?= htmlspecialchars($v['id'], ENT_QUOTES, 'UTF-8') ?>" data-codigo="<?= htmlspecialchars($v['codigo'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($v['codigo'] . ' - ' . $v['placa'], ENT_QUOTES, 'UTF-8') ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+                               <div class="col-md-3">
+    <label class="form-label fw-semibold">Placa:</label>
+    <input type="text" name="vehiculo_id" id="vehiculo_id" class="form-control" placeholder="Ingrese vehículo / placa" required>
+    </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-semibold">Código del Vehículo:</label>
-                                    <input type="text" id="codigo_vehiculo" class="form-control" placeholder="Autocompletado" readonly>
+                                    <input type="text" id="codigo_vehiculo" class="form-control" placeholder="Ejemp: UG-01" required>
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Hora:</label>
-                                    <input type="txt" name="hora" class="form-control" value="<?= htmlspecialchars(date('H:i A'), ENT_QUOTES, 'UTF-8') ?>" required>
-                                </div>
+                               <div class="col-md-2">
+    <label class="form-label fw-semibold">Hora:</label>
+    <input type="text" name="hora" class="form-control" value="<?= htmlspecialchars(date('H:i A'), ENT_QUOTES, 'UTF-8') ?>" readonly>
+     </div>
                                 <div class="col-md-2">
                                     <label class="form-label fw-semibold">Odómetro (KM):</label>
                                     <input type="number" name="odometro" class="form-control" required placeholder="Ej: 125000" min="0" step="1">
@@ -189,6 +155,48 @@ function actualizarCodigo() {
         codigoInput.value = '';
     }
 }
+
+// Toggle Sidebar
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebar = document.getElementById('sidebar');
+const wrapper = document.querySelector('.wrapper');
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        sidebar.classList.toggle('show');
+        wrapper.classList.toggle('sidebar-open');
+    });
+}
+
+// Cerrar sidebar cuando se hace click en un link
+const sidebarLinks = sidebar ? sidebar.querySelectorAll('.nav-link') : [];
+sidebarLinks.forEach(link => {
+    link.addEventListener('click', function() {
+        if (window.innerWidth <= 992) {
+            sidebar.classList.remove('show');
+            wrapper.classList.remove('sidebar-open');
+        }
+    });
+});
+
+// Cerrar sidebar al hacer click fuera
+document.addEventListener('click', function(e) {
+    if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('show')) {
+        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+            sidebar.classList.remove('show');
+            wrapper.classList.remove('sidebar-open');
+        }
+    }
+});
+
+// Ajustar sidebar al cambiar el tamaño de la ventana
+window.addEventListener('resize', function() {
+    if (window.innerWidth > 992) {
+        sidebar.classList.remove('show');
+        wrapper.classList.remove('sidebar-open');
+    }
+});
 </script>
 </body>
 </html>

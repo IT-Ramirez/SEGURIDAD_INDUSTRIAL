@@ -4,6 +4,7 @@ include '../config.php';
 // 1. Iniciar sesión y garantizar el Token CSRF
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+    $nombre_usuario = $_SESSION['nombre_usuario'] ?? $_SESSION['nombre'] ?? 'Usuario';
 }
 
 if (empty($_SESSION['csrf_token'])) {
