@@ -117,7 +117,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="text-center py-3">
+                                    <td class="py-3">
                                         <div class="btn-group status-group" role="group">
                                             <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required>
                                             <label class="btn btn-outline-correct" for="c_<?= $i ?>">
