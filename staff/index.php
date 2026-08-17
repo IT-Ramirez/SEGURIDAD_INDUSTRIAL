@@ -95,7 +95,7 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">Nombre Conductor:</label>
-                            <input type="text" name="nombre" class="form-control" required placeholder="Nombre completo" maxlength="150">
+                            <input type="text" name="nombre" class="form-control" value="<?= isset($_SESSION['nombre_empleado']) ? htmlspecialchars($_SESSION['nombre_empleado'], ENT_QUOTES, 'UTF-8') : '' ?>" required placeholder="Nombre completo" maxlength="150" readonly>
                         </div>
                     </div>
 
