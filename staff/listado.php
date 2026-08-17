@@ -239,7 +239,7 @@ $inspecciones = $pdo->query(
                                             <td><?= htmlspecialchars($insp['nombre_conductor']) ?></td>
                                             <td><?= number_format($insp['odometro']) ?> KM</td>
                                             <td>
-                                                <?php if ($insp['estado'] === 'Aprobado'): ?>
+                                                <?php if ($insp['estado'] === 'APTO PARA CONDUCIR'): ?>
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aprobado</span>
                                                 <?php else: ?>
                                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Con Fallas</span>
