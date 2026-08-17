@@ -3,6 +3,7 @@ ob_start();
 include_once("../session_check.php");
 checkRole(['admin']);
 include("../functions.php");
+header('Content-Type: text/html; charset=utf-8');
 
 $error = "";
 $success = "";
@@ -104,7 +105,7 @@ if(isset($_GET['delete'])){
 <body id="page-top">
     <?php include_once('../include/navbar.php'); ?>
     <div id="wrapper">
-        <?php include_once('../include/sidebar.php'); ?>
+      
         <div id="content-wrapper">
             <div class="container-fluid">
                 <h1 class="mb-4">Configuración de Usuarios</h1>
@@ -138,7 +139,7 @@ if(isset($_GET['delete'])){
                                 </thead>
                                 <tbody>
                                     <?php
-                                    $result = $sqlconnection->query("SELECT u.userID, u.nombre_empleado, u.username, u.email, u.id_area, u.roleID, u.clasificacion, a.nombre_area, a.CECO, r.role 
+                                    $result = $sqlconnection->query("SELECT u.userID, u.nombre_empleado, u.username, u.email, u.id_area, u.roleID, u.clasificacion, a.nombre_area, r.role 
                                                                      FROM tbl_users u 
                                                                      LEFT JOIN tbl_area a ON u.id_area = a.id_area 
                                                                      LEFT JOIN tbl_role r ON u.roleID = r.roleID 

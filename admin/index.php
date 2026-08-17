@@ -1,26 +1,48 @@
 <?php
-require_once __DIR__ . '/../config.php';
+require_once '../config.php';
 
-// 2. Pass the variables DIRECTLY without quotes around them
-$dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
-$pdo = new PDO($dsn, $username, $password);
-
-  // Procesar eliminación si se solicita
-if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-    $pdo->prepare("DELETE FROM detalles_inspeccion WHERE inspeccion_id = ?")->execute([$id]);
-    $pdo->prepare("DELETE FROM inspecciones WHERE id = ?")->execute([$id]);
-    header("Location: index.php");
-    exit;
+// Validar inicio de sesión
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-// Obtener inspecciones y datos relacionados
-$inspecciones = $pdo->query(
-    "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa
-    FROM inspecciones i
-    LEFT JOIN vehiculos v ON v.id = i.vehiculo_id
-    ORDER BY i.fecha_registro DESC"
-)->fetchAll(PDO::FETCH_ASSOC);
+$dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
+$pdo = new PDO($dsn, $username, $password, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+]);
+
+// Procesar eliminación de manera segura con transacciones
+if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
+    
+    try {
+        $pdo->beginTransaction();
+
+        $stmtDetalles = $pdo->prepare("DELETE FROM detalles_inspeccion WHERE inspeccion_id = ?");
+        $stmtDetalles->execute([$id]);
+
+        $stmtInspeccion = $pdo->prepare("DELETE FROM inspecciones WHERE id = ?");
+        $stmtInspeccion->execute([$id]);
+
+        $pdo->commit();
+        header("Location: index.php");
+        exit;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        die("Error al eliminar la inspección: " . $e->getMessage());
+    }
+}
+
+// Obtener TODAS las inspecciones (vista general para el Administrador)
+$stmt = $pdo->prepare(
+    "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, i.placa
+     FROM inspecciones i
+     LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
+     ORDER BY i.fecha_registro DESC"
+);
+
+$stmt->execute();
+$inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -194,7 +216,7 @@ $inspecciones = $pdo->query(
         <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-link btn-sm text-dark" id="sidebarToggle" href="#" style="display:none;">
-                    <i class="fas fa-bars fs-5"></i>
+                    <i class="bi bi-list fs-5"></i>
                 </button>
                 <span class="fs-5 fw-semibold text-dark">Administración de Inspecciones</span>
             </div>
@@ -218,7 +240,7 @@ $inspecciones = $pdo->query(
                 
                 <!-- Acciones Rápidas / Filtros -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <p class="text-muted m-0">Registro y estado del checklist diario de la flota.</p>
+                    <p class="text-muted m-0">Registro y estado del checklist diario de toda la flota.</p>
                     <a href="../staff/index.php" class="btn btn-eqx-gold">
                         <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
                     </a>
@@ -248,13 +270,13 @@ $inspecciones = $pdo->query(
                                     <?php endif; ?>
                                     <?php foreach ($inspecciones as $insp): ?>
                                         <tr>
-                                            <td class="ps-3 fw-bold">#<?= $insp['id'] ?></td>
+                                            <td class="ps-3 fw-bold">#<?= htmlspecialchars($insp['id']) ?></td>
                                             <td>
                                                 <span class="fw-semibold text-dark"><?= htmlspecialchars($insp['codigo'] ?? 'N/A') ?></span>
                                                 <small class="text-muted d-block"><?= htmlspecialchars($insp['placa'] ?? '') ?></small>
                                             </td>
                                             <td><?= htmlspecialchars($insp['nombre_conductor']) ?></td>
-                                            <td><?= number_format($insp['odometro']) ?> KM</td>
+                                            <td><?= number_format((float)$insp['odometro']) ?> KM</td>
                                             <td>
                                                 <?php if ($insp['estado'] === 'Aprobado'): ?>
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aprobado</span>
@@ -335,7 +357,7 @@ document.addEventListener('click', function(e) {
 
 // Ajustar sidebar al cambiar el tamaño de la ventana
 window.addEventListener('resize', function() {
-    if (window.innerWidth > 992) {
+    if (window.innerWidth > 992 && sidebar) {
         sidebar.classList.remove('show');
         wrapper.classList.remove('sidebar-open');
     }

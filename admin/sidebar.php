@@ -29,7 +29,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="staff.php" class="nav-link">
                 <i class="bi bi-people"></i> Usuarios
             </a>
         </li>
