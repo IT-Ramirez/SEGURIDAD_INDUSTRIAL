@@ -471,7 +471,8 @@
             }
 
             .table-eqx {
-                min-width: 650px;
+                width: 100%;
+                table-layout: auto;
             }
 
             .table-eqx thead th {
@@ -480,10 +481,15 @@
 
             .table-eqx tbody td {
                 font-size: 0.84rem;
+                word-wrap: break-word;
+                word-break: break-word;
+                white-space: normal;
+                padding: 12px 8px !important;
             }
 
             .status-group {
-                flex-wrap: nowrap;
+                flex-wrap: wrap;
+                gap: 8px;
             }
 
             .status-group .btn {
