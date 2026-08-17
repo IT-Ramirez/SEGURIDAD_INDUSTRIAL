@@ -281,9 +281,7 @@ require_once("../config.php");
         <main class="p-4">
             <div class="container-fluid p-0">
                 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                    <p class="text-muted m-0">
-                        Complete el checklist diario para el control vehicular.
-                    </p>
+                  
 
                     <div class="d-flex gap-2">
                         <a href="formulario.php" class="btn btn-eqx-gold btn-sm">
@@ -301,11 +299,7 @@ require_once("../config.php");
             <div class="card-body p-4">
                 <div class="header-brand d-flex align-items-center justify-content-between mb-4">
                     <div>
-                        <h3 class="fw-bold m-0" style="color:var(--eqx-dark)">Formato de Inspección Equipo Liviano</h3>
-                        <small class="text-muted fw-bold">CONTROL DE VEHÍCULOS</small>
-                    </div>
-                    <div class="px-3 py-1 bg-dark rounded text-center">
-                        <span class="fw-bold" style="color:var(--eqx-gold); font-size:0.9rem">01-FOR-037</span>
+                        <h3 class="fw-bold m-0" style="color:var(--eqx-dark)">Inspección Equipo Liviano</h3>
                     </div>
                 </div>
 
