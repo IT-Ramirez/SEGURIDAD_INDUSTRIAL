@@ -106,7 +106,7 @@ if(isset($_GET['delete'])){
         :root {
             --eqx-gold: #C59B27;
             --eqx-gold-hover: #A8821D;
-            --eqx-dark: #1C2024;
+            --eqx-dark: #24415D;
             --eqx-gray-dark: #2A2F35;
             --eqx-bg-light: #F4F6F8;
             --sidebar-width: 260px;
@@ -243,26 +243,7 @@ if(isset($_GET['delete'])){
         <?php include 'sidebar.php'; ?>
 
         <div class="main-content">
-            <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-link btn-sm text-dark" id="sidebarToggle" aria-expanded="false" onclick="toggleSidebar()">
-                        <i class="bi bi-list fs-5"></i>
-                    </button>
-                    <span class="fs-5 fw-semibold text-dark">Configuración de Usuarios</span>
-                </div>
-
-                <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-toggle="dropdown">
-                        <i class="bi bi-person-circle fs-5 text-secondary"></i>
-                        <span class="d-none d-md-inline fw-medium">Administrador</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Perfil</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                    </ul>
-                </div>
-            </header>
+            <?php $header_title = 'Configuración de Usuarios'; include 'header.php'; ?>
 
             <main class="p-4">
                 <div class="container-fluid p-0">
@@ -334,10 +315,7 @@ if(isset($_GET['delete'])){
                 </div>
             </main>
 
-            <footer class="footer d-flex justify-content-between align-items-center">
-                <small class="text-muted">© <?= date('Y') ?> <strong>Equinox Gold</strong>. Todos los derechos reservados.</small>
-                <small class="text-muted">Sistema Checklist v1.0</small>
-            </footer>
+            <?php include 'footer.php'; ?>
         </div>
     </div>
 

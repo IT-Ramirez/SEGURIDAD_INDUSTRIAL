@@ -17,7 +17,7 @@ require_once("../config.php");
     <style>
         :root {
             --eqx-gold: #D4AF37;
-            --eqx-dark: #1a1a1a;
+            --eqx-dark: #24415D;
             --sidebar-width: 260px;
         }
 
@@ -276,20 +276,7 @@ require_once("../config.php");
     <?php include 'sidebar.php'; ?>
 
     <div class="main-content">
-        <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-link btn-sm text-dark" id="sidebarToggle" aria-expanded="false" onclick="toggleSidebar()">
-                    <i class="bi bi-list fs-5"></i>
-                </button>
-                <span class="fs-5 fw-semibold text-dark">Formulario de Inspección</span>
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-                <a href="index.php" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i> Volver
-                </a>
-            </div>
-        </header>
+        <?php $header_title = 'Formulario de Inspección'; $header_actions = '<a href="index.php" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i> Volver</a>'; include 'header.php'; ?>
 
         <main class="p-4">
             <div class="container-fluid p-0">
@@ -420,10 +407,7 @@ require_once("../config.php");
         </div>
         </main>
 
-        <footer class="footer d-flex justify-content-between align-items-center">
-            <small class="text-muted">© <?= date('Y') ?> <strong>Equinox Gold</strong>. Todos los derechos reservados.</small>
-            <small class="text-muted">Sistema Checklist v1.0</small>
-        </footer>
+        <?php include 'footer.php'; ?>
     </div>
 </div>
 

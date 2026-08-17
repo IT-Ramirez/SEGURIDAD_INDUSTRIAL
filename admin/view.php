@@ -58,7 +58,7 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
         :root {
             --eqx-gold: #C59B27;
             --eqx-gold-hover: #A8821D;
-            --eqx-dark: #1C2024;
+            --eqx-dark: #24415D;
             --eqx-gray-dark: #2A2F35;
             --eqx-bg-light: #F4F6F8;
             --sidebar-width: 260px;
@@ -200,23 +200,7 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
     <?php include 'sidebar.php'; ?>
 
     <div class="main-content">
-        <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-link btn-sm text-dark" id="sidebarToggle" aria-expanded="false" onclick="toggleSidebar()">
-                    <i class="bi bi-list fs-5"></i>
-                </button>
-                <span class="fs-5 fw-semibold text-dark">Detalle de Inspección</span>
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-                <a href="index.php" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i> Volver al listado
-                </a>
-                <button onclick="window.print();" class="btn btn-outline-dark btn-sm">
-                    <i class="bi bi-printer me-1"></i> Imprimir
-                </button>
-            </div>
-        </header>
+        <?php $header_title = 'Detalle de Inspección'; $header_actions = '<a href="index.php" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a><button onclick="window.print();" class="btn btn-outline-light btn-sm"><i class="bi bi-printer me-1"></i> Imprimir</button>'; include 'header.php'; ?>
 
         <main class="p-4">
             <div class="container-fluid p-0">
@@ -345,10 +329,7 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
             </div>
         </main>
 
-        <footer class="footer d-flex justify-content-between align-items-center">
-            <small class="text-muted">© <?= date('Y') ?> <strong>Equinox Gold</strong>. Todos los derechos reservados.</small>
-            <small class="text-muted">Sistema Checklist v1.0</small>
-        </footer>
+        <?php include 'footer.php'; ?>
     </div>
 </div>
 
