@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $odometro,
             $hora,
             $observaciones,
-            $estado,
+            $dictamen,
             $codigo_seguridad
         ]);
 
