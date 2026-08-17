@@ -106,7 +106,6 @@
                             <thead>
                                 <tr>
                                     <th class="py-3 px-3">Parámetro</th>
-                                    <th style="width:280px" class="text-center py-3">Estado de Evaluación</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -116,7 +115,9 @@
                                         <span class="text-muted me-2"><?= sprintf('%02d', $i + 1) ?>.</span> 
                                         <?= htmlspecialchars($item['nombre'], ENT_QUOTES, 'UTF-8') ?>
                                     </td>
-                                    <td class="text-center py-2">
+                                </tr>
+                                <tr>
+                                    <td class="text-center py-3">
                                         <div class="btn-group status-group" role="group">
                                             <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required>
                                             <label class="btn btn-outline-correct" for="c_<?= $i ?>">
