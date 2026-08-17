@@ -239,18 +239,21 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="container-fluid p-0">
                 
                 <!-- Acciones Rápidas / Filtros -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex justify-content-between align-items-center gap-3 mb-4 flex-wrap">
                     <p class="text-muted m-0">Registro y estado del checklist diario de toda la flota.</p>
-                    <a href="../staff/index.php" class="btn btn-eqx-gold">
-                        <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
-                    </a>
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="max-width: 520px; min-width: 240px;">
+                        <input type="text" id="adminSearch" class="form-control form-control-sm" placeholder="Buscar por placa o conductor" aria-label="Buscar por placa o conductor" style="max-width: 260px;">
+                        <a href="../staff/index.php" class="btn btn-eqx-gold btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Tarjeta Principal con Tabla -->
                 <div class="card border-0 shadow-sm rounded-3">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0 table-eqx">
+                            <table id="inspeccionesTable" class="table table-hover align-middle mb-0 table-eqx">
                                 <thead>
                                     <tr>
                                         <th class="ps-3 py-3">ID</th>
@@ -301,6 +304,7 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                            <div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3 px-3 pb-3 gap-2 flex-wrap"></div>
                         </div>
                     </div>
                 </div>
@@ -319,9 +323,7 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <!-- Bootstrap 5 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-// Toggle Sidebar
 const sidebarToggle = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('sidebar');
 const wrapper = document.querySelector('.wrapper');
@@ -334,7 +336,6 @@ if (sidebarToggle) {
     });
 }
 
-// Cerrar sidebar cuando se hace click en un link
 const sidebarLinks = sidebar ? sidebar.querySelectorAll('.nav-link') : [];
 sidebarLinks.forEach(link => {
     link.addEventListener('click', function() {
@@ -345,7 +346,6 @@ sidebarLinks.forEach(link => {
     });
 });
 
-// Cerrar sidebar al hacer click fuera
 document.addEventListener('click', function(e) {
     if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('show')) {
         if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
@@ -355,13 +355,102 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Ajustar sidebar al cambiar el tamaño de la ventana
 window.addEventListener('resize', function() {
     if (window.innerWidth > 992 && sidebar) {
         sidebar.classList.remove('show');
         wrapper.classList.remove('sidebar-open');
     }
 });
+
+const adminSearch = document.getElementById('adminSearch');
+const tableRows = () => [...document.querySelectorAll('#inspeccionesTable tbody tr')];
+const tbody = document.querySelector('#inspeccionesTable tbody');
+const paginationContainer = document.getElementById('paginationContainer');
+const rowsPerPage = 8;
+let currentPage = 1;
+
+function renderPagination(filteredRows) {
+    if (!paginationContainer) return;
+
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageRows = filteredRows.slice(start, end);
+
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+
+    paginationContainer.innerHTML = `
+        <div class="text-muted small">Mostrando ${pageRows.length ? start + 1 : 0}-${Math.min(start + pageRows.length, filteredRows.length)} de ${filteredRows.length}</div>
+        <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-secondary ${prevDisabled}" data-page="prev">Anterior</button>
+            <button type="button" class="btn btn-outline-secondary ${nextDisabled}" data-page="next">Siguiente</button>
+        </div>
+    `;
+
+    paginationContainer.querySelector('[data-page="prev"]').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            applyTableFilter();
+        }
+    });
+
+    paginationContainer.querySelector('[data-page="next"]').addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            applyTableFilter();
+        }
+    });
+}
+
+function applyTableFilter() {
+    const query = adminSearch ? adminSearch.value.trim().toLowerCase() : '';
+    const rows = tableRows();
+    const filtered = rows.filter(row => {
+        if (row.querySelector('td[colspan]')) return true;
+        const rowText = row.textContent.toLowerCase();
+        return !query || rowText.includes(query);
+    });
+
+    rows.forEach(row => {
+        row.style.display = 'none';
+    });
+
+    const emptyState = document.querySelector('.empty-search-row');
+    if (emptyState) emptyState.remove();
+
+    if (filtered.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.className = 'empty-search-row';
+        emptyRow.innerHTML = '<td colspan="7" class="text-center py-4 text-muted">No se encontraron resultados.</td>';
+        tbody.appendChild(emptyRow);
+        paginationContainer.innerHTML = '';
+        return;
+    }
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    filtered.slice(start, end).forEach(row => {
+        row.style.display = '';
+    });
+
+    renderPagination(filtered);
+}
+
+if (adminSearch) {
+    adminSearch.addEventListener('input', function() {
+        currentPage = 1;
+        applyTableFilter();
+    });
+}
+
+applyTableFilter();
 </script>
+
 </body>
 </html>

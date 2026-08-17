@@ -99,79 +99,245 @@ if(isset($_GET['delete'])){
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="css/sb-admin.css" rel="stylesheet">    
     <link href="../css/stylesmac.css" rel="stylesheet">
+    <style>
+        :root {
+            --eqx-gold: #C59B27;
+            --eqx-gold-hover: #A8821D;
+            --eqx-dark: #1C2024;
+            --eqx-gray-dark: #2A2F35;
+            --eqx-bg-light: #F4F6F8;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            background-color: var(--eqx-bg-light);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background-color: var(--eqx-dark);
+            color: #ffffff;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        #sidebar .sidebar-header {
+            padding: 1.25rem 1.5rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 2px solid var(--eqx-gold);
+        }
+
+        #sidebar .nav-link {
+            color: #c2c7d0;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        #sidebar .nav-link:hover, #sidebar .nav-link.active {
+            color: #ffffff;
+            background-color: var(--eqx-gray-dark);
+            border-left: 4px solid var(--eqx-gold);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .top-navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .footer {
+            background-color: #ffffff;
+            border-top: 1px solid #e3e6f0;
+            padding: 1rem 1.5rem;
+            margin-top: auto;
+        }
+
+        .btn-eqx-gold {
+            background-color: var(--eqx-gold);
+            color: #ffffff;
+            border: none;
+            font-weight: 500;
+        }
+
+        .btn-eqx-gold:hover {
+            background-color: var(--eqx-gold-hover);
+            color: #ffffff;
+        }
+
+        #sidebarToggle { display: none; }
+
+        @media (max-width: 992px) {
+            #sidebar {
+                position: fixed;
+                left: -260px;
+                height: 100vh;
+                top: 0;
+                z-index: 1050;
+                box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+                transition: left 0.3s ease;
+            }
+            #sidebar.show { left: 0; }
+            .wrapper::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: none;
+                z-index: 1040;
+            }
+            .wrapper.sidebar-open::before { display: block; }
+            #sidebarToggle { display: block !important; }
+        }
+
+        @media (max-width: 768px) {
+            .top-navbar {
+                padding: 0.5rem 1rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            main { padding: 1rem !important; }
+            .table-responsive { font-size: 0.9rem; }
+        }
+
+        @media (max-width: 576px) {
+            .top-navbar {
+                padding: 0.4rem 0.75rem;
+                gap: 0.5rem;
+            }
+            main { padding: 0.75rem !important; }
+            .card { border-radius: 0.5rem !important; }
+            .table-responsive { font-size: 0.8rem; }
+        }
+    </style>
 </head>
-<body id="page-top">
-    <?php include_once('../include/navbar.php'); ?>
-    <div id="wrapper">
-      
-        <div id="content-wrapper">
-            <div class="container-fluid">
-                <h1 class="mb-4">Configuración de Usuarios</h1>
+<body>
+    <div class="wrapper">
+        <?php include 'sidebar.php'; ?>
 
-                <button class="btn btn-success mb-3" data-toggle="modal" data-target="#addStaffModal">
-                    <i class="fa fa-plus"></i> Agregar Usuario
-                </button>
+        <div class="main-content">
+            <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-link btn-sm text-dark" id="sidebarToggle" href="#" style="display:none;">
+                        <i class="bi bi-list fs-5"></i>
+                    </button>
+                    <span class="fs-5 fw-semibold text-dark">Configuración de Usuarios</span>
+                </div>
 
-                <?php if($error): ?>
-                    <div class="alert alert-danger"><?php echo $error; ?></div>
-                <?php endif; ?>
-                <?php if($success): ?>
-                    <div class="alert alert-success"><?php echo $success; ?></div>
-                <?php endif; ?>
+                <div class="dropdown">
+                    <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-5 text-secondary"></i>
+                        <span class="d-none d-md-inline fw-medium">Administrador</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Perfil</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
+                    </ul>
+                </div>
+            </header>
 
-                <div class="card mb-4 shadow-sm">
-                    <div class="card-header"><i class="fas fa-user-circle"></i> Lista de Usuarios</div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="staffTable" class="table table-striped table-bordered" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th># ID</th>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Área</th>
-                                        <th>CECO</th>
-                                        <th>Clasificación</th>
-                                        <th>Opciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $result = $sqlconnection->query("SELECT u.userID, u.nombre_empleado, u.username, u.email, u.id_area, u.roleID, u.clasificacion, a.nombre_area, r.role 
+            <main class="p-4">
+                <div class="container-fluid p-0">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <p class="text-muted m-0">Administración y mantenimiento de usuarios del sistema.</p>
+                        <button class="btn btn-eqx-gold" data-toggle="modal" data-target="#addStaffModal">
+                            <i class="fa fa-plus me-1"></i> Agregar Usuario
+                        </button>
+                    </div>
+
+                    <?php if($error): ?>
+                        <div class="alert alert-danger"><?php echo $error; ?></div>
+                    <?php endif; ?>
+                    <?php if($success): ?>
+                        <div class="alert alert-success"><?php echo $success; ?></div>
+                    <?php endif; ?>
+
+                    <div class="card mb-4 shadow-sm border-0 rounded-3">
+                        <div class="card-header"><i class="fas fa-user-circle"></i> Lista de Usuarios</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="staffTable" class="table table-striped table-bordered" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th># ID</th>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Área</th>
+                                            <th>CECO</th>
+                                            <th>Clasificación</th>
+                                            <th>Opciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        $result = $sqlconnection->query("SELECT u.userID, u.nombre_empleado, u.username, u.email, u.id_area, u.roleID, u.clasificacion, a.nombre_area, r.role 
                                                                      FROM tbl_users u 
                                                                      LEFT JOIN tbl_area a ON u.id_area = a.id_area 
                                                                      LEFT JOIN tbl_role r ON u.roleID = r.roleID 
                                                                      WHERE u.username != 'itadmin'");
-                                    while($row = $result->fetch_assoc()):
-                                    ?>
-                                    <tr>
-                                        <td><?php echo $row['userID']; ?></td>
-                                        <td><?php echo htmlspecialchars($row['nombre_empleado']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['nombre_area'] ?? 'Sin Área'); ?></td>
-                                        <td><?php echo htmlspecialchars($row['CECO'] ?? 'Sin CECO'); ?></td>
-                                        <td><?php echo htmlspecialchars($row['clasificacion'] ?? ''); ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary edit-btn" 
-                                                data-id="<?php echo $row['userID']; ?>"
-                                                data-nombre="<?php echo htmlspecialchars($row['nombre_empleado'], ENT_QUOTES); ?>"
-                                                data-user="<?php echo htmlspecialchars($row['username'], ENT_QUOTES); ?>"
-                                                data-email="<?php echo htmlspecialchars($row['email'], ENT_QUOTES); ?>"
-                                                data-area="<?php echo $row['id_area']; ?>"
-                                                data-role="<?php echo $row['roleID']; ?>"
-                                                data-ceco="<?php echo htmlspecialchars($row['CECO'] ?? '', ENT_QUOTES); ?>"
-                                                data-toggle="modal" data-target="#editStaffModal">Editar</button>
-                                            <a href="?delete=<?php echo $row['userID']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
-                                        </td>
-                                    </tr>
-                                    <?php endwhile; ?>
-                                </tbody>
-                            </table>
-                        </div> </div>
+                                        while($row = $result->fetch_assoc()):
+                                        ?>
+                                        <tr>
+                                            <td><?php echo "N/D"; ?></td>
+                                            <td><?php echo htmlspecialchars($row['nombre_empleado']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['email']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['nombre_area'] ?? 'Sin Área'); ?></td>
+                                            <td><?php echo htmlspecialchars($row['CECO'] ?? 'Sin CECO'); ?></td>
+                                            <td><?php echo htmlspecialchars($row['clasificacion'] ?? ''); ?></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary edit-btn" 
+                                                    data-id="<?php echo $row['userID']; ?>"
+                                                    data-nombre="<?php echo htmlspecialchars($row['nombre_empleado'], ENT_QUOTES); ?>"
+                                                    data-user="<?php echo htmlspecialchars($row['username'], ENT_QUOTES); ?>"
+                                                    data-email="<?php echo htmlspecialchars($row['email'], ENT_QUOTES); ?>"
+                                                    data-area="<?php echo $row['id_area']; ?>"
+                                                    data-role="<?php echo $row['roleID']; ?>"
+                                                    data-ceco="<?php echo htmlspecialchars($row['CECO'] ?? '', ENT_QUOTES); ?>"
+                                                    data-toggle="modal" data-target="#editStaffModal">Editar</button>
+                                                <a href="?delete=<?php echo $row['userID']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar?')">Eliminar</a>
+                                            </td>
+                                        </tr>
+                                        <?php endwhile; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </main>
+
+            <footer class="footer d-flex justify-content-between align-items-center">
+                <small class="text-muted">© <?= date('Y') ?> <strong>Equinox Gold</strong>. Todos los derechos reservados.</small>
+                <small class="text-muted">Sistema Checklist v1.0</small>
+            </footer>
         </div>
     </div>
 
