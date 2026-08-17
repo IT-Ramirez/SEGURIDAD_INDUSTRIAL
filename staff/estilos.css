@@ -590,3 +590,43 @@
                 color: #000 !important;
             }
         }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #24415D;
+            border-top: 1px solid #e3e6f0;
+            padding: 1rem 1.5rem;
+            margin-top: auto;
+            text-align: center;
+            color: white;
+        }
+
+        .footer .text-white {
+            color: white !important;
+        }
+
+        /* Top Navbar Styles */
+        .top-navbar {
+            background-color: #24415D;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .top-navbar .text-white {
+            color: white !important;
+        }
+
+        .top-navbar .btn-outline-light {
+            color: white;
+            border-color: white;
+        }
+
+        .top-navbar .btn-outline-light:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: white;
+            color: white;
+        }

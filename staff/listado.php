@@ -103,7 +103,7 @@ $inspecciones = $pdo->query(
 
         /* Top Navbar */
         .top-navbar {
-            background-color: #ffffff;
+            background-color: #24415D;
             border-bottom: 1px solid #e3e6f0;
             padding: 0.75rem 1.5rem;
         }
@@ -116,10 +116,12 @@ $inspecciones = $pdo->query(
 
         /* Footer */
         .footer {
-            background-color: #ffffff;
+            background-color: #24415D;
             border-top: 1px solid #e3e6f0;
             padding: 1rem 1.5rem;
             margin-top: auto;
+            text-align: center;
+            color: white;
         }
 
         .btn-eqx-gold {
@@ -190,27 +192,8 @@ $inspecciones = $pdo->query(
     <!-- MAIN CONTENT AREA -->
     <div class="main-content">
         
-        <!-- 2. NAVBAR SUPERIOR -->
-        <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-link btn-sm text-dark" id="sidebarToggle" href="#" style="display:none;">
-                    <i class="fas fa-bars fs-5"></i>
-                </button>
-                <span class="fs-5 fw-semibold text-dark">Administración de Inspecciones</span>
-            </div>
-
-            <div class="dropdown">
-                <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle fs-5 text-secondary"></i>
-                    <span class="d-none d-md-inline fw-medium">Administrador</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Perfil</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
-                </ul>
-            </div>
-        </header>
+        <!-- NAVBAR SUPERIOR -->
+        <?php include 'header.php'; ?>
 
         <!-- CONTENIDO PRINCIPAL -->
         <main class="p-4">
@@ -284,11 +267,7 @@ $inspecciones = $pdo->query(
             </div>
         </main>
 
-        <!-- 3. FOOTER -->
-        <footer class="footer d-flex justify-content-between align-items-center">
-            <small class="text-muted">© <?= date('Y') ?> <strong>Equinox Gold</strong>. Todos los derechos reservados.</small>
-            <small class="text-muted">Sistema Checklist v1.0</small>
-        </footer>
+        <?php include 'footer.php'; ?>
 
     </div>
 </div>

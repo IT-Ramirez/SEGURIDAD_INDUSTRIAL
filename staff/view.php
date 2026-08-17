@@ -39,9 +39,44 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Inspección</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            background-color: #24415D;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .footer {
+            background-color: #24415D;
+            border-top: 1px solid #e3e6f0;
+            padding: 1rem 1.5rem;
+            margin-top: auto;
+            text-align: center;
+            color: white;
+        }
+
+        .footer .text-white {
+            color: white !important;
+        }
+    </style>
 </head>
-<body class="bg-light p-3">
-<div class="container bg-white p-4 rounded shadow-sm">
+<body class="bg-light">
+<div class="wrapper">
+    <?php include 'header.php'; ?>
+    
+    <div class="container bg-white p-4 rounded shadow-sm m-3">
     <h3 class="mb-4 text-danger">Detalle de la Inspección #<?= $inspeccion['id'] ?></h3>
 
     <div class="mb-3">
@@ -143,6 +178,10 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
             </table>
         </div>
     </div>
+    </div>
+
+    <?php include 'footer.php'; ?>
 </div>
+
 </body>
 </html>

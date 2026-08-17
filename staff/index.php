@@ -9,10 +9,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="icon" type="image/png" href="/image/eqx.jpg">
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            background-color: #24415D;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 
 <body>
 <div class="wrapper">
+    <?php include 'header.php'; ?>
+    
     <main class="p-4">
         <div class="container-fluid p-0">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -141,6 +161,8 @@
             </div>
         </div>
     </main>
+
+    <?php include 'footer.php'; ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
