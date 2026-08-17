@@ -11,9 +11,8 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $id = (int)$_GET['id'];
 
 $stmt = $pdo->prepare(
-    "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa
+    "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, i.codigo_vehiculo, i.placa
     FROM inspecciones i
-    LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
     WHERE i.id = ?"
 );
 $stmt->execute([$id]);
@@ -86,7 +85,7 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <strong>Vehículo:</strong>
-            <div><?= htmlspecialchars($inspeccion['codigo'] . ' - ' . $inspeccion['placa']) ?></div>
+            <div><?= htmlspecialchars($inspeccion['codigo_vehiculo'] . ' - ' . $inspeccion['placa']) ?></div>
         </div>
         <div class="col-md-4">
             <strong>Conductor:</strong>
