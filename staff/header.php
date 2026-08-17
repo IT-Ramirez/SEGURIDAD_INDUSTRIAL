@@ -10,7 +10,7 @@
     <div class="dropdown">
         <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-bs-toggle="dropdown">
             <i class="bi bi-person-circle fs-5 text-white"></i>
-            <span class="d-none d-md-inline fw-medium text-white"><?= isset($_SESSION['nombre']) ? htmlspecialchars($_SESSION['nombre']) : 'Usuario' ?></span>
+            <span class="d-none d-md-inline fw-medium text-white"><?= isset($_SESSION['nombre_empleado']) ? htmlspecialchars($_SESSION['nombre_empleado'], ENT_QUOTES, 'UTF-8') : 'Usuario' ?></span>
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
             <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Perfil</a></li>
