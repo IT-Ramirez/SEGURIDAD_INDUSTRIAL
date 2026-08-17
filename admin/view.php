@@ -20,9 +20,8 @@ $id = (int)$_GET['id'];
 
 // Obtener datos generales de la inspección
 $stmt = $pdo->prepare(
-    "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa
+    "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, i.codigo_vehiculo, i.placa
      FROM inspecciones i
-     LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
      WHERE i.id = ?"
 );
 $stmt->execute([$id]);
