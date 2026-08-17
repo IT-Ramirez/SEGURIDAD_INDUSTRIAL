@@ -215,7 +215,7 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <!-- 2. NAVBAR SUPERIOR -->
         <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-link btn-sm text-dark" id="sidebarToggle" href="#" style="display:none;">
+                <button type="button" class="btn btn-link btn-sm text-dark" id="sidebarToggle" aria-expanded="false" onclick="toggleSidebar()">
                     <i class="bi bi-list fs-5"></i>
                 </button>
                 <span class="fs-5 fw-semibold text-dark">Administración de Inspecciones</span>
@@ -324,42 +324,38 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!-- Bootstrap 5 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const sidebarToggle = document.getElementById('sidebarToggle');
-const sidebar = document.getElementById('sidebar');
-const wrapper = document.querySelector('.wrapper');
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const wrapper = document.querySelector('.wrapper');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
-if (sidebarToggle) {
-    sidebarToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        sidebar.classList.toggle('show');
-        wrapper.classList.toggle('sidebar-open');
-    });
+    if (!sidebar || !wrapper || !sidebarToggle) return;
+
+    const isOpen = !sidebar.classList.contains('show');
+    sidebar.classList.toggle('show', isOpen);
+    wrapper.classList.toggle('sidebar-open', isOpen);
+    sidebarToggle.setAttribute('aria-expanded', String(isOpen));
 }
 
-const sidebarLinks = sidebar ? sidebar.querySelectorAll('.nav-link') : [];
-sidebarLinks.forEach(link => {
-    link.addEventListener('click', function() {
-        if (window.innerWidth <= 992) {
-            sidebar.classList.remove('show');
-            wrapper.classList.remove('sidebar-open');
-        }
-    });
-});
-
-document.addEventListener('click', function(e) {
-    if (window.innerWidth <= 992 && sidebar && sidebar.classList.contains('show')) {
-        if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-            sidebar.classList.remove('show');
-            wrapper.classList.remove('sidebar-open');
-        }
-    }
-});
-
 window.addEventListener('resize', function() {
-    if (window.innerWidth > 992 && sidebar) {
+    const sidebar = document.getElementById('sidebar');
+    const wrapper = document.querySelector('.wrapper');
+    if (!sidebar || !wrapper) return;
+
+    if (window.innerWidth > 992) {
         sidebar.classList.remove('show');
         wrapper.classList.remove('sidebar-open');
     }
+});
+
+const sidebarLinks = document.querySelectorAll('#sidebar .nav-link');
+sidebarLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+        if (window.innerWidth <= 992) {
+            document.getElementById('sidebar')?.classList.remove('show');
+            document.querySelector('.wrapper')?.classList.remove('sidebar-open');
+        }
+    });
 });
 
 const adminSearch = document.getElementById('adminSearch');

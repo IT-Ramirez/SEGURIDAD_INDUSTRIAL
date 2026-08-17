@@ -245,7 +245,7 @@ if(isset($_GET['delete'])){
         <div class="main-content">
             <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-link btn-sm text-dark" id="sidebarToggle" href="#" style="display:none;">
+                    <button type="button" class="btn btn-link btn-sm text-dark" id="sidebarToggle" aria-expanded="false" onclick="toggleSidebar()">
                         <i class="bi bi-list fs-5"></i>
                     </button>
                     <span class="fs-5 fw-semibold text-dark">Configuración de Usuarios</span>
@@ -438,6 +438,40 @@ if(isset($_GET['delete'])){
             $('#edit_area').val($(this).data('area'));
             $('#edit_role').val($(this).data('role'));
             $('#edit_ceco').val($(this).data('ceco'));
+        });
+    });
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const wrapper = document.querySelector('.wrapper');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        if (!sidebar || !wrapper || !sidebarToggle) return;
+
+        const isOpen = !sidebar.classList.contains('show');
+        sidebar.classList.toggle('show', isOpen);
+        wrapper.classList.toggle('sidebar-open', isOpen);
+        sidebarToggle.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('sidebar');
+        const wrapper = document.querySelector('.wrapper');
+        if (!sidebar || !wrapper) return;
+
+        if (window.innerWidth > 992) {
+            sidebar.classList.remove('show');
+            wrapper.classList.remove('sidebar-open');
+        }
+    });
+
+    const sidebarLinks = document.querySelectorAll('#sidebar .nav-link');
+    sidebarLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 992) {
+                document.getElementById('sidebar')?.classList.remove('show');
+                document.querySelector('.wrapper')?.classList.remove('sidebar-open');
+            }
         });
     });
     </script>
