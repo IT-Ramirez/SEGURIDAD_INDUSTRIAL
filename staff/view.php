@@ -85,7 +85,7 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <strong>Vehículo:</strong>
-            <div><?= htmlspecialchars($inspeccion['codigo_vehiculo'] . ' - ' . $inspeccion['placa']) ?></div>
+            <div><?= htmlspecialchars($inspeccion['codigo_vehiculo'] . ' / ' . $inspeccion['placa']) ?></div>
         </div>
         <div class="col-md-4">
             <strong>Conductor:</strong>
