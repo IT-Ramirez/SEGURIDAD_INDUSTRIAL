@@ -13,7 +13,7 @@ $id = (int)$_GET['id'];
 $stmt = $pdo->prepare(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa
     FROM inspecciones i
-    LEFT JOIN vehiculos v ON v.id = i.vehiculo_id
+    LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
     WHERE i.id = ?"
 );
 $stmt->execute([$id]);

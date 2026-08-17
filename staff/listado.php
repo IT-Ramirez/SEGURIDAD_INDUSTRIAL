@@ -1,7 +1,7 @@
 <?php
 session_start();
 include_once '../session_check.php';
-require_once __DIR__ . '/../config.php';
+require_once '../config.php';
 
 // 2. Pass the variables DIRECTLY without quotes around them
 $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
@@ -20,7 +20,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 $inspecciones = $pdo->query(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, v.placa
     FROM inspecciones i
-    LEFT JOIN vehiculos v ON v.id = i.vehiculo_id WHERE i.userID = {$_SESSION['uid']}
+    LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo WHERE i.userID = {$_SESSION['uid']}
     ORDER BY i.fecha_registro DESC"
 )->fetchAll(PDO::FETCH_ASSOC);
 ?>
