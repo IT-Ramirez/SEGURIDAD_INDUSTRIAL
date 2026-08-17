@@ -208,7 +208,7 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
                         <h4 class="m-0 fw-bold fs-5">
                             <i class="bi bi-clipboard-check me-2"></i> Inspección #<?= htmlspecialchars($inspeccion['id']) ?>
                         </h4>
-                        <span class="badge fs-6 <?= $inspeccion['estado'] === 'Aprobado' ? 'bg-success' : 'bg-danger' ?>">
+                        <span class="badge fs-6 <?= $inspeccion['estado'] === 'APTO PARA CONDUCIR' ? 'bg-success' : 'bg-danger' ?>">
                             <?= htmlspecialchars($inspeccion['estado']) ?>
                         </span>
                     </div>
