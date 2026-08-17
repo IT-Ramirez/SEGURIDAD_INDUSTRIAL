@@ -287,7 +287,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $mensaje = 'Inspección registrada con éxito.';
-
+        header('Location: listado.php');
+        
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         error_log('Error al procesar inspección: ' . $e->getMessage());
