@@ -2,6 +2,10 @@
 // Conexión a la base de datos
 include("../dbconnection.php"); 
 include_once("../session_check.php");
+checkRole(['admin']);
+
+
+
 
 // Obtener todos los usuarios
 $query = $sqlconnection->query("SELECT UserID FROM tbl_users");

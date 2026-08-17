@@ -1,5 +1,8 @@
 <?php
-require_once '../config.php'; 
+include_once("../session_check.php");
+checkRole(['admin']);
+require_once("../config.php");
+
 
 // Conexión a la base de datos utilizando las variables de config.php
 $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";

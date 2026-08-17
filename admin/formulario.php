@@ -1,36 +1,314 @@
-<?php include 'obtener_pdf.php'; ?>
+<?php
+include_once("../session_check.php");
+checkRole(['admin']);
+require_once("../config.php");
+ include 'obtener_pdf.php';     
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist Staff - Equinox Gold</title>
+    <title>Formulario de Inspección - Equinox Gold</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="icon" type="image/png" href="/image/eqx.jpg">
     <link rel="stylesheet" href="estilos.css">
+    <style>
+        :root {
+            --eqx-gold: #D4AF37;
+            --eqx-dark: #1a1a1a;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .wrapper {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            position: fixed;
+            left: -260px;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: #1a1a1a;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar-header h5 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .sidebar-header small {
+            display: block;
+            font-size: 0.65rem !important;
+        }
+
+        .sidebar .nav {
+            padding: 0 0.5rem;
+        }
+
+        .sidebar .nav-link {
+            color: #adb5bd;
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            color: var(--eqx-gold);
+            background-color: rgba(212, 175, 55, 0.1);
+        }
+
+        .sidebar .nav-link.active {
+            color: var(--eqx-gold);
+            background-color: rgba(212, 175, 55, 0.15);
+            border-left: 3px solid var(--eqx-gold);
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            width: 1.2rem;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+        }
+
+        .wrapper.sidebar-open .main-content {
+            margin-left: 0;
+        }
+
+        .wrapper.sidebar-open::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .top-navbar {
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #sidebarToggle {
+            display: none;
+        }
+
+        @media (max-width: 992px) {
+            #sidebarToggle {
+                display: inline-block;
+            }
+
+            .wrapper {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            #sidebar {
+                position: fixed;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        .btn-eqx-gold {
+            background-color: var(--eqx-gold);
+            color: var(--eqx-dark);
+            border: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-eqx-gold:hover {
+            background-color: #c19b1a;
+            color: var(--eqx-dark);
+            transform: translateY(-2px);
+        }
+
+        .table-eqx {
+            border: 1px solid #dee2e6;
+        }
+
+        .table-eqx thead {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table-eqx th {
+            font-weight: 600;
+            color: var(--eqx-dark);
+            padding: 0.75rem;
+        }
+
+        .table-eqx tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn-outline-correct {
+            color: #28a745;
+            border-color: #28a745;
+        }
+
+        .btn-outline-correct:hover {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-outline-incorrect {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-outline-incorrect:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-outline-na {
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .btn-outline-na:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .status-group {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-check:checked + .btn-outline-correct {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-check:checked + .btn-outline-incorrect {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-check:checked + .btn-outline-na {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-action-area {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-action-area .btn {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .top-navbar {
+                padding: 0.75rem 1rem;
+            }
+
+            .btn-action-area {
+                flex-direction: column;
+            }
+
+            .d-md-flex {
+                gap: 0.5rem;
+            }
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            padding: 1rem;
+            font-size: 0.875rem;
+        }
+    </style>
 </head>
 
 <body>
 <div class="wrapper">
-    <main class="p-4">
-        <div class="container-fluid p-0">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <p class="text-muted m-0">
-                    Complete el checklist diario para el control vehicular.
-                </p>
+    <?php include 'sidebar.php'; ?>
 
-                <div class="d-flex gap-2">
-                    <a href="index.php" class="btn btn-eqx-gold">
-                        <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
-                    </a>
+    <div class="main-content">
+        <header class="top-navbar d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-link btn-sm text-dark" id="sidebarToggle" aria-expanded="false" onclick="toggleSidebar()">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <span class="fs-5 fw-semibold text-dark">Formulario de Inspección</span>
+            </div>
 
-                    <a href="listado.php" class="btn btn-eqx-gold">
-                        <i class="bi bi-list-check me-1"></i> Ver Inspecciones
-                    </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="index.php" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Volver
+                </a>
+            </div>
+        </header>
+
+        <main class="p-4">
+            <div class="container-fluid p-0">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <p class="text-muted m-0">
+                        Complete el checklist diario para el control vehicular.
+                    </p>
+
+                    <div class="d-flex gap-2">
+                        <a href="formulario.php" class="btn btn-eqx-gold btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
+                        </a>
+
+                        <a href="index.php" class="btn btn-eqx-gold btn-sm">
+                            <i class="bi bi-list-check me-1"></i> Ver Inspecciones
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
 
         <div class="card border-0 shadow-sm rounded-3">
             <div class="card-body p-4">
@@ -133,16 +411,58 @@
                     </div>
 
                     <div class="btn-action-area">
-                        <button type="submit" class="btn btn-eqx-gold w-100 btn-lg shadow-sm fw-bold">
+                        <button type="submit" class="btn btn-eqx-gold btn-lg shadow-sm fw-bold">
                             <i class="bi bi-file-earmark-pdf me-2"></i>Enviar y Generar PDF
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-    </main>
+        </main>
+
+        <footer class="footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">© <?= date('Y') ?> <strong>Equinox Gold</strong>. Todos los derechos reservados.</small>
+            <small class="text-muted">Sistema Checklist v1.0</small>
+        </footer>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const wrapper = document.querySelector('.wrapper');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+
+    if (!sidebar || !wrapper || !sidebarToggle) return;
+
+    const isOpen = !sidebar.classList.contains('show');
+    sidebar.classList.toggle('show', isOpen);
+    wrapper.classList.toggle('sidebar-open', isOpen);
+    sidebarToggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+window.addEventListener('resize', function() {
+    const sidebar = document.getElementById('sidebar');
+    const wrapper = document.querySelector('.wrapper');
+    if (!sidebar || !wrapper) return;
+
+    if (window.innerWidth > 992) {
+        sidebar.classList.remove('show');
+        wrapper.classList.remove('sidebar-open');
+    }
+});
+
+const sidebarLinks = document.querySelectorAll('#sidebar .nav-link');
+sidebarLinks.forEach(function(link) {
+    link.addEventListener('click', function() {
+        if (window.innerWidth <= 992) {
+            document.getElementById('sidebar')?.classList.remove('show');
+            document.querySelector('.wrapper')?.classList.remove('sidebar-open');
+        }
+    });
+});
+</script>
 </body>
+</html>
 </html>
