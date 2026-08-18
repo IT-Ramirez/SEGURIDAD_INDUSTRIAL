@@ -227,6 +227,9 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p class="text-muted m-0">Registro y estado del checklist diario de toda la flota.</p>
                     <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="max-width: 520px; min-width: 240px;">
                         <input type="text" id="adminSearch" class="form-control form-control-sm" placeholder="Buscar por placa o conductor" aria-label="Buscar por placa o conductor" style="max-width: 260px;">
+                        <a href="exportar_excel.php" class="btn btn-outline-success btn-sm" title="Exportar inspecciones a Excel">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
+                        </a>
                         <a href="formulario.php" class="btn btn-eqx-gold btn-sm">
                             <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
                         </a>

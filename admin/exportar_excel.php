@@ -1,0 +1,92 @@
+<?php
+include_once('../session_check.php');
+checkRole(['admin']);
+require_once('../config.php');
+
+$dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
+$pdo = new PDO($dsn, $username, $password, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false
+]);
+
+$stmt = $pdo->query(
+    "SELECT i.id, i.placa, COALESCE(v.codigo, '') AS codigo_vehiculo,
+            i.nombre_conductor, i.odometro, i.hora, i.estado,
+            i.fecha_registro, i.observaciones, d.parametro, d.resultado
+     FROM inspecciones i
+     LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
+     LEFT JOIN detalles_inspeccion d ON d.inspeccion_id = i.id
+     ORDER BY i.fecha_registro DESC, i.id DESC, d.id ASC"
+);
+
+$inspecciones = [];
+$parametros = [];
+
+while ($row = $stmt->fetch()) {
+    $id = (int)$row['id'];
+
+    if (!isset($inspecciones[$id])) {
+        $inspecciones[$id] = [
+            'id' => $row['id'],
+            'placa' => $row['placa'],
+            'codigo_vehiculo' => $row['codigo_vehiculo'],
+            'nombre_conductor' => $row['nombre_conductor'],
+            'odometro' => $row['odometro'],
+            'hora' => $row['hora'],
+            'estado' => $row['estado'],
+            'fecha_registro' => $row['fecha_registro'],
+            'observaciones' => $row['observaciones'],
+            'resultados' => []
+        ];
+    }
+
+    if ($row['parametro'] !== null && $row['parametro'] !== '') {
+        $parametros[$row['parametro']] = true;
+        $inspecciones[$id]['resultados'][$row['parametro']] = $row['resultado'];
+    }
+}
+
+$filename = 'inspecciones_' . date('Ymd_His') . '.csv';
+header('Content-Type: text/csv; charset=UTF-8');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
+header('Pragma: no-cache');
+header('Expires: 0');
+
+$output = fopen('php://output', 'w');
+fwrite($output, "\xEF\xBB\xBF");
+
+fputcsv($output, [
+    'ID inspección', 'Placa', 'Código vehículo', 'Conductor', 'Odómetro',
+    'Hora', 'Estado', 'Fecha de registro', 'Observaciones', ...array_keys($parametros)
+], ';');
+
+foreach ($inspecciones as $inspeccion) {
+    $values = [
+        $inspeccion['id'],
+        $inspeccion['placa'],
+        $inspeccion['codigo_vehiculo'],
+        $inspeccion['nombre_conductor'],
+        $inspeccion['odometro'],
+        $inspeccion['hora'],
+        $inspeccion['estado'],
+        $inspeccion['fecha_registro'],
+        $inspeccion['observaciones']
+    ];
+
+    foreach (array_keys($parametros) as $parametro) {
+        $values[] = $inspeccion['resultados'][$parametro] ?? '';
+    }
+
+    foreach ($values as &$value) {
+        if (is_string($value) && preg_match('/^[=+\-@]/', $value)) {
+            $value = "'" . $value;
+        }
+    }
+    unset($value);
+
+    fputcsv($output, $values, ';');
+}
+
+fclose($output);
+exit;
