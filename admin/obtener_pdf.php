@@ -102,7 +102,6 @@ $parametros = [
     ["nombre" => "Limpieza Interior", "tipo" => "CINA"],
     ["nombre" => "Espejos, Vidrios, Aire acondicionado", "tipo" => "CINA"],
     ["nombre" => "Vidrios sin fisuras / Sin Polarizado", "tipo" => "CINA"],
-    ["nombre" => "Cinta de precaución amarilla/roja", "tipo" => "CINA"]
 ];
 
 $mensaje = null;
@@ -124,6 +123,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nombre = trim((string)($_POST['nombre'] ?? ''));
         $hora = trim((string)($_POST['hora'] ?? date('h:i A')));
         $observaciones = trim((string)($_POST['observaciones'] ?? ''));
+        $camposNuevos = [
+            'Cinta de precaución amarilla/roja' => $_POST['cinta_precaucion'] ?? '',
+            'GPS Activo' => $_POST['gps_activo'] ?? '',
+            'Radio Base' => $_POST['radio_base'] ?? '',
+            'Tarjeta GPS' => $_POST['tarjeta_gps'] ?? '',
+            '* ¿Se siente fatigado?' => $_POST['fatiga'] ?? '',
+            'Nivel de Combustible' => $_POST['nivel_combustible'] ?? '',
+            'Último mantenimiento' => trim((string)($_POST['ultimo_mantenimiento'] ?? ''))
+        ];
+
+        foreach ($camposNuevos as $nombreCampo => $valorCampo) {
+            if ($valorCampo === '')
+                throw new Exception('Debe completar el campo: ' . $nombreCampo);
+        }
 
         
         if ($odometro === false || $odometro < 0) throw new Exception('El odómetro no es válido.');
@@ -153,7 +166,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $dictamen = $primeras13 ? 'APTO PARA CONDUCIR' : 'NO APTO PARA CONDUCIR';
+        $dictamen = $primeras13 && $camposNuevos['* ¿Se siente fatigado?'] === 'NO'
+            ? 'APTO PARA CONDUCIR'
+            : 'NO APTO PARA CONDUCIR';
         $estado = in_array('I', $respuestas, true) ? 'Con Fallas' : 'Aprobado';
         $userID = (int)$_SESSION['uid'];
         $codigo_seguridad = bin2hex(random_bytes(16));
@@ -192,6 +207,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $item['nombre'],
                 $respuestas[$i]
             ]);
+        }
+
+        foreach ($camposNuevos as $nombreCampo => $valorCampo) {
+            $valorGuardado = $nombreCampo === '* ¿Se siente fatigado?'
+                ? ($valorCampo === 'SI' ? 'I' : 'C')
+                : $valorCampo;
+            $stmtDetalle->execute([$inspeccion_id, $nombreCampo, $valorGuardado]);
         }
 
         $pdo->commit();
@@ -233,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdf->SetFillColor(230, 230, 230);
             $pdf->Cell(45, 6, fpdf_txt('ESTADO DEL VEHÍCULO:'), 1, 0, 'L', true);
 
-            if ($primeras13) {
+            if ($dictamen === 'APTO PARA CONDUCIR') {
                 $pdf->SetFillColor(220, 245, 220);
                 $pdf->SetTextColor(0, 100, 0);
             } else {
@@ -270,6 +292,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $pdf->Cell(145, 4.8, fpdf_txt(($i + 1) . '. ' . $item['nombre']), 1, 0, 'L');
                 $pdf->Cell(45, 4.8, fpdf_txt($texto), 1, 1, 'C', true);
+            }
+
+            foreach ($camposNuevos as $nombreCampo => $valorCampo) {
+                $pdf->SetFillColor(240, 240, 240);
+                $pdf->Cell(145, 4.8, fpdf_txt($nombreCampo), 1, 0, 'L');
+                $pdf->Cell(45, 4.8, fpdf_txt($valorCampo), 1, 1, 'C', true);
             }
 
             $pdf->Ln(2);

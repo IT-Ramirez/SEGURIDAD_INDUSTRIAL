@@ -382,6 +382,47 @@ require_once("../config.php");
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
+                                <?php
+                                $camposSiNo = [
+                                    'cinta_precaucion' => 'Cinta de precaución amarilla/roja',
+                                    'gps_activo' => 'GPS Activo',
+                                    'radio_base' => 'Radio Base',
+                                    'tarjeta_gps' => 'Tarjeta GPS',
+                                    'fatiga' => '* ¿Se siente fatigado?'
+                                ];
+                                foreach ($camposSiNo as $nombreCampo => $etiquetaCampo):
+                                ?>
+                                <tr>
+                                    <td class="px-3 py-2 fw-medium text-dark"><?= htmlspecialchars($etiquetaCampo, ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="text-center py-2">
+                                        <div class="btn-group status-group" role="group">
+                                            <?php $esFatiga = $nombreCampo === 'fatiga'; ?>
+                                            <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>" value="<?= $esFatiga ? 'SI' : 'C' ?>" required>
+                                            <label class="btn btn-outline-correct" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>"><?= $esFatiga ? 'SI' : '<i class="bi bi-check-lg me-1"></i>Correcto' ?></label>
+                                            <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>" value="<?= $esFatiga ? 'NO' : 'I' ?>" required>
+                                            <label class="btn btn-outline-incorrect" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>"><?= $esFatiga ? 'NO' : '<i class="bi bi-x-lg me-1"></i>Incorrecto' ?></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <tr>
+                                    <td class="px-3 py-2 fw-medium text-dark">Nivel de Combustible</td>
+                                    <td class="text-center py-2">
+                                        <select name="nivel_combustible" class="form-select" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="3/4 (Tres cuartos): 75%">3/4 (Tres cuartos): 75%</option>
+                                            <option value="1/2 (Medio): 50%">1/2 (Medio): 50%</option>
+                                            <option value="1/4 (Un cuarto): 25%">1/4 (Un cuarto): 25%</option>
+                                            <option value="Full (Lleno): 100%">Full (Lleno): 100%</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2 fw-medium text-dark">Último mantenimiento</td>
+                                    <td class="text-center py-2">
+                                        <input type="date" name="ultimo_mantenimiento" class="form-control" required>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
