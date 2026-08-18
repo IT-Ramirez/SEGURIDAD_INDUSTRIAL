@@ -269,7 +269,7 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             <td><?= number_format((float)$insp['odometro']) ?> KM</td>
                                             <td>
                                                 <?php if ($insp['estado'] === 'APTO PARA CONDUCIR'): ?>
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aprobado</span>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">APTO PARA CONDUCIR</span>
                                                 <?php else: ?>
                                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Con Fallas</span>
                                                 <?php endif; ?>
