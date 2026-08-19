@@ -2,6 +2,7 @@
 include_once("../session_check.php");
 checkRole(['admin']);
 require_once("../config.php");
+require_once __DIR__ . '/admin_scope.php';
 
 
 // Conexión a la base de datos utilizando las variables de config.php
@@ -9,6 +10,7 @@ $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
 $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ]);
+$areaId = getAdminAreaId($pdo);
 
 // Validar ID de inspección
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -21,10 +23,11 @@ $id = (int)$_GET['id'];
 // Obtener datos generales de la inspección
 $stmt = $pdo->prepare(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, i.codigo_vehiculo, i.placa
-     FROM inspecciones i
-     WHERE i.id = ?"
+    FROM inspecciones i
+    INNER JOIN tbl_users u ON u.userID = i.userID
+    WHERE i.id = ? AND u.id_area = ?"
 );
-$stmt->execute([$id]);
+$stmt->execute([$id, $areaId]);
 $inspeccion = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$inspeccion) {

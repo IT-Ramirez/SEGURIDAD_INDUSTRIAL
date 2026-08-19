@@ -2,6 +2,7 @@
 include_once('../session_check.php');
 checkRole(['admin']);
 require_once('../config.php');
+require_once __DIR__ . '/admin_scope.php';
 
 $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
 $pdo = new PDO($dsn, $username, $password, [
@@ -9,8 +10,25 @@ $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false
 ]);
+$areaId = getAdminAreaId($pdo);
+$desde = $_GET['desde'] ?? '';
+$hasta = $_GET['hasta'] ?? '';
+$fechaValida = static function (string $fecha): bool {
+    $date = DateTime::createFromFormat('!Y-m-d', $fecha);
+    return $date !== false && $date->format('Y-m-d') === $fecha;
+};
+$where = ['u.id_area = :area_id'];
+$params = [':area_id' => $areaId];
+if ($fechaValida($desde)) {
+    $where[] = 'i.fecha_registro >= :desde';
+    $params[':desde'] = $desde . ' 00:00:00';
+}
+if ($fechaValida($hasta)) {
+    $where[] = 'i.fecha_registro < DATE_ADD(:hasta, INTERVAL 1 DAY)';
+    $params[':hasta'] = $hasta . ' 00:00:00';
+}
 
-$stmt = $pdo->query(
+$stmt = $pdo->prepare(
     "SELECT i.id, i.placa, COALESCE(v.codigo, '') AS codigo_vehiculo,
              i.nombre_conductor, COALESCE(a.nombre_area, '') AS area,
              COALESCE(u.clasificacion, '') AS clasificacion,
@@ -21,8 +39,10 @@ $stmt = $pdo->query(
          LEFT JOIN tbl_users u ON u.userID = i.userID
          LEFT JOIN tbl_area a ON a.id_area = u.id_area
      LEFT JOIN detalles_inspeccion d ON d.inspeccion_id = i.id
-     ORDER BY i.fecha_registro DESC, i.id DESC, d.id ASC"
+    WHERE " . implode(' AND ', $where) . "
+    ORDER BY i.fecha_registro DESC, i.id DESC, d.id ASC"
 );
+$stmt->execute($params);
 
 $inspecciones = [];
 $parametros = [];

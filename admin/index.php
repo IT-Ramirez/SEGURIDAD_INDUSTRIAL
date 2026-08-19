@@ -3,6 +3,7 @@ require_once '../config.php';
 include_once("../session_check.php");
 checkRole(['admin']);
 include('../functions.php');
+require_once __DIR__ . '/admin_scope.php';
 
 // Validar inicio de sesión
 if (session_status() === PHP_SESSION_NONE) {
@@ -13,6 +14,23 @@ $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
 $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ]);
+$areaId = getAdminAreaId($pdo);
+$desde = $_GET['desde'] ?? '';
+$hasta = $_GET['hasta'] ?? '';
+$fechaValida = static function (string $fecha): bool {
+    $date = DateTime::createFromFormat('!Y-m-d', $fecha);
+    return $date !== false && $date->format('Y-m-d') === $fecha;
+};
+$where = ['u.id_area = :area_id'];
+$params = [':area_id' => $areaId];
+if ($fechaValida($desde)) {
+    $where[] = 'i.fecha_registro >= :desde';
+    $params[':desde'] = $desde . ' 00:00:00';
+}
+if ($fechaValida($hasta)) {
+    $where[] = 'i.fecha_registro < DATE_ADD(:hasta, INTERVAL 1 DAY)';
+    $params[':hasta'] = $hasta . ' 00:00:00';
+}
 
 // Procesar eliminación de manera segura con transacciones
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
@@ -24,8 +42,12 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         $stmtDetalles = $pdo->prepare("DELETE FROM detalles_inspeccion WHERE inspeccion_id = ?");
         $stmtDetalles->execute([$id]);
 
-        $stmtInspeccion = $pdo->prepare("DELETE FROM inspecciones WHERE id = ?");
-        $stmtInspeccion->execute([$id]);
+        $stmtInspeccion = $pdo->prepare(
+            "DELETE i FROM inspecciones i
+             INNER JOIN tbl_users u ON u.userID = i.userID
+             WHERE i.id = ? AND u.id_area = ?"
+        );
+        $stmtInspeccion->execute([$id, $areaId]);
 
         $pdo->commit();
         header("Location: index.php");
@@ -39,12 +61,14 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 // Obtener TODAS las inspecciones (vista general para el Administrador)
 $stmt = $pdo->prepare(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, i.placa
-     FROM inspecciones i
-     LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
-     ORDER BY i.fecha_registro DESC"
+    FROM inspecciones i
+    LEFT JOIN tbl_users u ON u.userID = i.userID
+    LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
+    WHERE " . implode(' AND ', $where) . "
+    ORDER BY i.fecha_registro DESC"
 );
 
-$stmt->execute();
+$stmt->execute($params);
 $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -224,10 +248,14 @@ $inspecciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 <!-- Acciones Rápidas / Filtros -->
                 <div class="d-flex justify-content-between align-items-center gap-3 mb-4 flex-wrap">
-                    <p class="text-muted m-0">Registro y estado del checklist diario de toda la flota.</p>
-                    <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="max-width: 520px; min-width: 240px;">
-                        <input type="text" id="adminSearch" class="form-control form-control-sm" placeholder="Buscar por placa o conductor" aria-label="Buscar por placa o conductor" style="max-width: 260px;">
-                        <a href="exportar_excel.php" class="btn btn-outline-success btn-sm" title="Exportar inspecciones a Excel">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end flex-wrap" style="max-width: 760px; min-width: 240px;">
+                        <form method="GET" class="d-flex align-items-center gap-2 flex-nowrap">
+                            <input type="date" name="desde" value="<?= htmlspecialchars($desde, ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm" aria-label="Fecha desde" title="Fecha desde">
+                            <input type="date" name="hasta" value="<?= htmlspecialchars($hasta, ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm" aria-label="Fecha hasta" title="Fecha hasta">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">Filtrar</button>
+                            <?php if ($desde !== '' || $hasta !== ''): ?><a href="index.php" class="btn btn-outline-secondary btn-sm">Limpiar</a><?php endif; ?>
+                        </form>
+                        <a href="exportar_excel.php?desde=<?= urlencode($desde) ?>&hasta=<?= urlencode($hasta) ?>" class="btn btn-outline-success btn-sm" title="Exportar inspecciones a Excel">
                             <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
                         </a>
                         <a href="formulario.php" class="btn btn-eqx-gold btn-sm">
@@ -342,7 +370,6 @@ sidebarLinks.forEach(function(link) {
     });
 });
 
-const adminSearch = document.getElementById('adminSearch');
 const tableRows = () => [...document.querySelectorAll('#inspeccionesTable tbody tr')];
 const tbody = document.querySelector('#inspeccionesTable tbody');
 const paginationContainer = document.getElementById('paginationContainer');
@@ -389,13 +416,8 @@ function renderPagination(filteredRows) {
 }
 
 function applyTableFilter() {
-    const query = adminSearch ? adminSearch.value.trim().toLowerCase() : '';
     const rows = tableRows();
-    const filtered = rows.filter(row => {
-        if (row.querySelector('td[colspan]')) return true;
-        const rowText = row.textContent.toLowerCase();
-        return !query || rowText.includes(query);
-    });
+    const filtered = rows;
 
     rows.forEach(row => {
         row.style.display = 'none';
@@ -420,13 +442,6 @@ function applyTableFilter() {
     });
 
     renderPagination(filtered);
-}
-
-if (adminSearch) {
-    adminSearch.addEventListener('input', function() {
-        currentPage = 1;
-        applyTableFilter();
-    });
 }
 
 applyTableFilter();

@@ -86,8 +86,8 @@ $parametros = [
     ["nombre" => "Trabas para espárragos / Revisión de tuerca de espárragos", "tipo" => "CI"],
     ["nombre" => "Alarma Retroceso", "tipo" => "CI"],
     ["nombre" => "Pértiga, con banderola y luz en extremo superior color ámbar (Aplica en Tajo)", "tipo" => "CINA"],
-    ["nombre" => "Conos de Seguridad (Mínimo 3 unidades de 36\" para Tajo y Mina UG)", "tipo" => "CINA"],
-    ["nombre" => "Botiquín de primeros Auxilios", "tipo" => "CINA"],
+    ["nombre" => "Conos de Seguridad (Mínimo 3 unidades de 36\" para Tajo y Mina UG)", "tipo" => "CI"],
+    ["nombre" => "Botiquín de primeros Auxilios", "tipo" => "CI"],
     ["nombre" => "Nivel Fluidos (Aceite de motor, Coolant, Aceite Power Steering, Nivel de combustible)", "tipo" => "CINA"],
     ["nombre" => "Halógenos de Retroceso (Obligatorio en UG)", "tipo" => "CINA"],
     ["nombre" => "Estado físico de carrocería (golpes, rayones)", "tipo" => "CINA"],
@@ -96,12 +96,12 @@ $parametros = [
     ["nombre" => "Cortador de corriente", "tipo" => "CINA"],
     ["nombre" => "Neumáticos, Llantas, Rines, Espárragos", "tipo" => "CINA"],
     ["nombre" => "Llanta de repuesto", "tipo" => "CINA"],
-    ["nombre" => "Extintor, bolso porta extintor", "tipo" => "CINA"],
+    ["nombre" => "Extintor, bolso porta extintor", "tipo" => "CI"],
     ["nombre" => "Limpia Parabrisas", "tipo" => "CINA"],
     ["nombre" => "Herramientas (Gata, maneral, extensión para gata, alicate)", "tipo" => "CINA"],
     ["nombre" => "Limpieza Interior", "tipo" => "CINA"],
     ["nombre" => "Espejos, Vidrios, Aire acondicionado", "tipo" => "CINA"],
-    ["nombre" => "Vidrios sin fisuras / Sin Polarizado", "tipo" => "CINA"],
+    ["nombre" => "Vidrios sin fisuras / Sin Polarizado", "tipo" => "CI"],
 ];
 
 $mensaje = null;
@@ -158,18 +158,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Los parámetros obligatorios no pueden marcarse como N/A.');
         }
 
-        $primeras13 = true;
-        for ($i = 0; $i < 13; $i++) {
-            if (($respuestas[$i] ?? '') !== 'C') {
-                $primeras13 = false;
+        $obligatoriosCorrectos = true;
+        foreach ($parametros as $i => $item) {
+            if ($item['tipo'] === 'CI' && ($respuestas[$i] ?? '') !== 'C') {
+                $obligatoriosCorrectos = false;
                 break;
             }
         }
 
-        $dictamen = $primeras13 && $camposNuevos['* ¿Se siente fatigado?'] === 'NO'
+        $dictamen = $obligatoriosCorrectos
+            && $camposNuevos['GPS Activo'] === 'C'
+            && $camposNuevos['* ¿Se siente fatigado?'] === 'NO'
             ? 'APTO PARA CONDUCIR'
             : 'NO APTO PARA CONDUCIR';
-        $estado = in_array('I', $respuestas, true) ? 'Con Fallas' : 'APTO PARA CONDUCIR';
+        $estado = $dictamen;
         $userID = (int)$_SESSION['uid'];
         $codigo_seguridad = bin2hex(random_bytes(16));
 

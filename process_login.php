@@ -15,7 +15,7 @@ if ($email === '' || $password === '') {
 }
 
 $stmt = $sqlconnection->prepare(
-    "SELECT userID, nombre_empleado, username, email, password, roleID 
+    "SELECT userID, nombre_empleado, username, email, password, roleID, id_area 
      FROM tbl_users 
      WHERE email = ? 
      LIMIT 1"
@@ -42,6 +42,7 @@ if ($row = $result->fetch_assoc()) {
         $_SESSION['username'] = $row['username'];
         $_SESSION['email'] = $row['email'];
         $_SESSION['roleID'] = (int)$row['roleID'];
+        $_SESSION['admin_area_id'] = (int)$row['id_area'];
         $_SESSION['last_activity'] = time();
 
         switch ((int)$row['roleID']) {
