@@ -60,12 +60,13 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
 }
 
 // Obtener TODAS las inspecciones (vista general para el Administrador)
+$whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 $stmt = $pdo->prepare(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, v.codigo, i.placa
     FROM inspecciones i
     LEFT JOIN tbl_users u ON u.userID = i.userID
     LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
-    WHERE " . implode(' AND ', $where) . "
+    " . $whereSql . "
     ORDER BY i.fecha_registro DESC"
 );
 

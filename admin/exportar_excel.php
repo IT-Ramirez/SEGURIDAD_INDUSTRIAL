@@ -29,6 +29,7 @@ if ($fechaValida($hasta)) {
     $params[':hasta'] = $hasta . ' 00:00:00';
 }
 
+$whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 $stmt = $pdo->prepare(
     "SELECT i.id, i.placa, COALESCE(v.codigo, '') AS codigo_vehiculo,
              i.nombre_conductor, COALESCE(a.nombre_area, '') AS area,
@@ -40,7 +41,7 @@ $stmt = $pdo->prepare(
          LEFT JOIN tbl_users u ON u.userID = i.userID
          LEFT JOIN tbl_area a ON a.id_area = u.id_area
      LEFT JOIN detalles_inspeccion d ON d.inspeccion_id = i.id
-    WHERE " . implode(' AND ', $where) . "
+    " . $whereSql . "
     ORDER BY i.fecha_registro DESC, i.id DESC, d.id ASC"
 );
 $stmt->execute($params);
