@@ -12,10 +12,14 @@ $pdo = new PDO($dsn, $username, $password, [
 
 $stmt = $pdo->query(
     "SELECT i.id, i.placa, COALESCE(v.codigo, '') AS codigo_vehiculo,
-            i.nombre_conductor, i.odometro, i.hora, i.estado,
+             i.nombre_conductor, COALESCE(a.nombre_area, '') AS area,
+             COALESCE(u.clasificacion, '') AS clasificacion,
+             i.odometro, i.hora, i.estado,
             i.fecha_registro, i.observaciones, d.parametro, d.resultado
      FROM inspecciones i
      LEFT JOIN vehiculos v ON v.id = i.codigo_vehiculo
+         LEFT JOIN tbl_users u ON u.userID = i.userID
+         LEFT JOIN tbl_area a ON a.id_area = u.id_area
      LEFT JOIN detalles_inspeccion d ON d.inspeccion_id = i.id
      ORDER BY i.fecha_registro DESC, i.id DESC, d.id ASC"
 );
@@ -32,6 +36,8 @@ while ($row = $stmt->fetch()) {
             'placa' => $row['placa'],
             'codigo_vehiculo' => $row['codigo_vehiculo'],
             'nombre_conductor' => $row['nombre_conductor'],
+            'area' => $row['area'],
+            'clasificacion' => $row['clasificacion'],
             'odometro' => $row['odometro'],
             'hora' => $row['hora'],
             'estado' => $row['estado'],
@@ -57,7 +63,7 @@ $output = fopen('php://output', 'w');
 fwrite($output, "\xEF\xBB\xBF");
 
 fputcsv($output, [
-    'ID inspección', 'Placa', 'Código vehículo', 'Conductor', 'Odómetro',
+    'ID inspección', 'Placa', 'Código vehículo', 'Conductor', 'Área', 'Clasificación', 'Odómetro',
     'Hora', 'Estado', 'Fecha de registro', 'Observaciones', ...array_keys($parametros)
 ], ';');
 
@@ -67,6 +73,8 @@ foreach ($inspecciones as $inspeccion) {
         $inspeccion['placa'],
         $inspeccion['codigo_vehiculo'],
         $inspeccion['nombre_conductor'],
+        $inspeccion['area'],
+        $inspeccion['clasificacion'],
         $inspeccion['odometro'],
         $inspeccion['hora'],
         $inspeccion['estado'],

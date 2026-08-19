@@ -213,6 +213,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $valorGuardado = $nombreCampo === '* ¿Se siente fatigado?'
                 ? ($valorCampo === 'SI' ? 'I' : 'C')
                 : $valorCampo;
+            if (mb_strlen($valorGuardado) > 255)
+                throw new Exception('El valor del campo "' . $nombreCampo . '" es demasiado largo.');
             $stmtDetalle->execute([$inspeccion_id, $nombreCampo, $valorGuardado]);
         }
 
