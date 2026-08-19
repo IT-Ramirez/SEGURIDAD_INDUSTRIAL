@@ -366,12 +366,12 @@ require_once("../config.php");
                                         <div class="btn-group status-group" role="group">
                                             <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required>
                                             <label class="btn btn-outline-correct" for="c_<?= $i ?>">
-                                                <i class="bi bi-check-lg me-1"></i>Correcto
+                                                <i class="bi bi-check-lg me-1"></i>Cumple
                                             </label>
 
                                             <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="i_<?= $i ?>" value="I" required>
                                             <label class="btn btn-outline-incorrect" for="i_<?= $i ?>">
-                                                <i class="bi bi-x-lg me-1"></i>Incorrecto
+                                                <i class="bi bi-x-lg me-1"></i>No cumple
                                             </label>
 
                                             <?php if ($item['tipo'] === 'CINA'): ?>
@@ -398,9 +398,9 @@ require_once("../config.php");
                                         <div class="btn-group status-group" role="group">
                                             <?php $esFatiga = $nombreCampo === 'fatiga'; ?>
                                             <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>" value="<?= $esFatiga ? 'SI' : 'C' ?>" required>
-                                            <label class="btn btn-outline-correct" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>"><?= $esFatiga ? 'SI' : '<i class="bi bi-check-lg me-1"></i>Correcto' ?></label>
+                                            <label class="btn btn-outline-correct" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>"><?= $esFatiga ? 'SI' : '<i class="bi bi-check-lg me-1"></i>Cumple' ?></label>
                                             <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>" value="<?= $esFatiga ? 'NO' : 'I' ?>" required>
-                                            <label class="btn btn-outline-incorrect" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>"><?= $esFatiga ? 'NO' : '<i class="bi bi-x-lg me-1"></i>Incorrecto' ?></label>
+                                            <label class="btn btn-outline-incorrect" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>"><?= $esFatiga ? 'NO' : '<i class="bi bi-x-lg me-1"></i>No cumple' ?></label>
                                         </div>
                                     </td>
                                 </tr>

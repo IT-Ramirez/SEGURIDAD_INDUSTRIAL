@@ -41,7 +41,7 @@ $detalles = $detallesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Filtrar únicamente los parámetros no conformes o con fallas
 $noAdecuados = array_filter($detalles, function ($detalle) {
-    return $detalle['resultado'] !== 'C';
+    return !in_array(strtolower($detalle['resultado']), ['c', 'cumple'], true);
 });
 ?>
 
@@ -273,10 +273,10 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
                                                 <tr>
                                                     <td><?= htmlspecialchars($detalle['parametro']) ?></td>
                                                     <td>
-                                                        <?php if ($detalle['resultado'] === 'I'): ?>
-                                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Insuficiente / Falla</span>
+                                                        <?php if (in_array(strtolower($detalle['resultado']), ['i', 'incumple'], true)): ?>
+                                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Incumple</span>
                                                         <?php else: ?>
-                                                            <span class="badge bg-secondary"><i class="bi bi-dash-circle me-1"></i> No Aplica</span>
+                                                            <span class="badge bg-secondary"><i class="bi bi-dash-circle me-1"></i> No aplica</span>
                                                         <?php endif; ?>
                                                     </td>
                                                 </tr>
@@ -306,17 +306,17 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
                                                 <td class="text-center text-muted fw-bold"><?= $index + 1 ?></td>
                                                 <td><?= htmlspecialchars($detalle['parametro']) ?></td>
                                                 <td>
-                                                    <?php if ($detalle['resultado'] === 'C'): ?>
+                                                    <?php if (in_array(strtolower($detalle['resultado']), ['c', 'cumple'], true)): ?>
                                                         <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                                            <i class="bi bi-check-circle me-1"></i> Conforme
+                                                            <i class="bi bi-check-circle me-1"></i> Cumple
                                                         </span>
-                                                    <?php elseif ($detalle['resultado'] === 'I'): ?>
+                                                    <?php elseif (in_array(strtolower($detalle['resultado']), ['i', 'incumple'], true)): ?>
                                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
-                                                            <i class="bi bi-x-circle me-1"></i> Insuficiente / Falla
+                                                            <i class="bi bi-x-circle me-1"></i> Incumple
                                                         </span>
                                                     <?php else: ?>
                                                         <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
-                                                            <i class="bi bi-dash-circle me-1"></i> No Aplica
+                                                            <i class="bi bi-dash-circle me-1"></i> No aplica
                                                         </span>
                                                     <?php endif; ?>
                                                 </td>

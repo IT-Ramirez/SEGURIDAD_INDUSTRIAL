@@ -27,7 +27,7 @@ $detalles->execute([$id]);
 $detalles = $detalles->fetchAll(PDO::FETCH_ASSOC);
 
 $noAdecuados = array_filter($detalles, function ($detalle) {
-    return $detalle['resultado'] !== 'C';
+    return !in_array(strtolower($detalle['resultado']), ['c', 'cumple'], true);
 });
 ?>
 
@@ -132,10 +132,10 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
                             <tr>
                                 <td><?= htmlspecialchars($detalle['parametro']) ?></td>
                                 <td>
-                                    <?php if ($detalle['resultado'] === 'I'): ?>
-                                        <span class="badge bg-danger">I - Insuficiente / Falla</span>
+                                    <?php if (in_array(strtolower($detalle['resultado']), ['i', 'incumple'], true)): ?>
+                                        <span class="badge bg-danger">Incumple</span>
                                     <?php else: ?>
-                                        <span class="badge bg-secondary">NA - No aplica</span>
+                                        <span class="badge bg-secondary">No aplica</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -163,12 +163,12 @@ $noAdecuados = array_filter($detalles, function ($detalle) {
                             <td><?= $index + 1 ?></td>
                             <td><?= htmlspecialchars($detalle['parametro']) ?></td>
                             <td>
-                                <?php if ($detalle['resultado'] === 'C'): ?>
-                                    <span class="badge bg-success">C - Conforme</span>
-                                <?php elseif ($detalle['resultado'] === 'I'): ?>
-                                    <span class="badge bg-danger">I - Insuficiente / Falla</span>
+                                <?php if (in_array(strtolower($detalle['resultado']), ['c', 'cumple'], true)): ?>
+                                    <span class="badge bg-success">Cumple</span>
+                                <?php elseif (in_array(strtolower($detalle['resultado']), ['i', 'incumple'], true)): ?>
+                                    <span class="badge bg-danger">Incumple</span>
                                 <?php else: ?>
-                                    <span class="badge bg-secondary">NA - No aplica</span>
+                                    <span class="badge bg-secondary">No aplica</span>
                                 <?php endif; ?>
                             </td>
                         </tr>

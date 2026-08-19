@@ -202,12 +202,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             (inspeccion_id,parametro,resultado)
             VALUES (?,?,?)
         ");
+        $resultadoTexto = [
+            'C' => 'cumple',
+            'I' => 'incumple',
+            'NA' => 'no aplica'
+        ];
 
         foreach ($parametros as $i => $item) {
             $stmtDetalle->execute([
                 $inspeccion_id,
                 $item['nombre'],
-                $respuestas[$i]
+                $resultadoTexto[$respuestas[$i]]
             ]);
         }
 
@@ -215,6 +220,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $valorGuardado = $nombreCampo === '* ¿Se siente fatigado?'
                 ? ($valorCampo === 'SI' ? 'I' : 'C')
                 : $valorCampo;
+            if (isset($resultadoTexto[$valorGuardado])) {
+                $valorGuardado = $resultadoTexto[$valorGuardado];
+            }
             if (mb_strlen($valorGuardado) > 255)
                 throw new Exception('El valor del campo "' . $nombreCampo . '" es demasiado largo.');
             $stmtDetalle->execute([$inspeccion_id, $nombreCampo, $valorGuardado]);
