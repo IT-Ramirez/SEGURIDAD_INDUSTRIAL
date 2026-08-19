@@ -3,6 +3,15 @@ ob_start();
 include_once("../session_check.php");
 checkRole(['admin']);
 include("../functions.php");
+require_once('../config.php');
+require_once __DIR__ . '/admin_scope.php';
+
+$dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
+$pdo = new PDO($dsn, $username, $password, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+]);
+$isGlobalAdmin = isGlobalAdmin();
+$areaId = $isGlobalAdmin ? null : getAdminAreaId($pdo);
 header('Content-Type: text/html; charset=utf-8');
 
 $error = "";
@@ -20,7 +29,7 @@ if(isset($_POST['addstaff'])){
     $name = $_POST['staffname'];
     $username = strtolower(str_replace(' ', '.', $_POST['username'])); 
     $email = $_POST['email']; 
-    $area = (int)$_POST['area'];
+    $area = $isGlobalAdmin ? (int)$_POST['area'] : $areaId;
     $role = (int)$_POST['staffrole'];
     $ceco = $_POST['ceco'];
     $clasificacion = $_POST['clasificacion'];
@@ -62,11 +71,21 @@ if(isset($_POST['updateStaff'])){
 
     if(!empty($password)){
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $sqlconnection->prepare("UPDATE tbl_users SET nombre_empleado=?, username=?, email=?, id_area=?, roleID=?, CECO=?, password=? WHERE userID=?");
-        $stmt->bind_param("sssiissi", $name, $username, $email, $area, $role, $ceco, $hashedPassword, $id);
+        if ($isGlobalAdmin) {
+            $stmt = $sqlconnection->prepare("UPDATE tbl_users SET nombre_empleado=?, username=?, email=?, id_area=?, roleID=?, CECO=?, password=? WHERE userID=?");
+            $stmt->bind_param("sssiissi", $name, $username, $email, $area, $role, $ceco, $hashedPassword, $id);
+        } else {
+            $stmt = $sqlconnection->prepare("UPDATE tbl_users SET nombre_empleado=?, username=?, email=?, roleID=?, CECO=?, password=? WHERE userID=? AND id_area=?");
+            $stmt->bind_param("sssissii", $name, $username, $email, $role, $ceco, $hashedPassword, $id, $areaId);
+        }
     } else {
-        $stmt = $sqlconnection->prepare("UPDATE tbl_users SET nombre_empleado=?, username=?, email=?, id_area=?, roleID=?, CECO=? WHERE userID=?");
-        $stmt->bind_param("sssiisi", $name, $username, $email, $area, $role, $ceco, $id);
+        if ($isGlobalAdmin) {
+            $stmt = $sqlconnection->prepare("UPDATE tbl_users SET nombre_empleado=?, username=?, email=?, id_area=?, roleID=?, CECO=? WHERE userID=?");
+            $stmt->bind_param("sssiisi", $name, $username, $email, $area, $role, $ceco, $id);
+        } else {
+            $stmt = $sqlconnection->prepare("UPDATE tbl_users SET nombre_empleado=?, username=?, email=?, roleID=?, CECO=? WHERE userID=? AND id_area=?");
+            $stmt->bind_param("sssisii", $name, $username, $email, $role, $ceco, $id, $areaId);
+        }
     }
 
     if($stmt->execute()){
@@ -79,8 +98,13 @@ if(isset($_POST['updateStaff'])){
 
 if(isset($_GET['delete'])){
     $id = (int)$_GET['delete'];
-    $stmt = $sqlconnection->prepare("DELETE FROM tbl_users WHERE userID=?");
-    $stmt->bind_param("i", $id);
+    if ($isGlobalAdmin) {
+        $stmt = $sqlconnection->prepare("DELETE FROM tbl_users WHERE userID=?");
+        $stmt->bind_param("i", $id);
+    } else {
+        $stmt = $sqlconnection->prepare("DELETE FROM tbl_users WHERE userID=? AND id_area=?");
+        $stmt->bind_param("ii", $id, $areaId);
+    }
     if($stmt->execute()){
         header("Location: staff.php?msg=deleted");
         exit();
@@ -279,11 +303,15 @@ if(isset($_GET['delete'])){
                                     </thead>
                                     <tbody>
                                         <?php
-                                        $result = $sqlconnection->query("SELECT u.userID, u.nombre_empleado, u.username, u.email, u.id_area, u.roleID, u.clasificacion, a.nombre_area, r.role 
+                                        $usersQuery = "SELECT u.userID, u.nombre_empleado, u.username, u.email, u.id_area, u.roleID, u.clasificacion, u.CECO, a.nombre_area, r.role 
                                                                      FROM tbl_users u 
                                                                      LEFT JOIN tbl_area a ON u.id_area = a.id_area 
                                                                      LEFT JOIN tbl_role r ON u.roleID = r.roleID 
-                                                                     WHERE u.username != 'itadmin'");
+                                                                     WHERE " . ($isGlobalAdmin ? "1=1" : "u.username != 'itadmin' AND u.id_area = ?");
+                                        $stmtUsers = $sqlconnection->prepare($usersQuery);
+                                        if (!$isGlobalAdmin) $stmtUsers->bind_param("i", $areaId);
+                                        $stmtUsers->execute();
+                                        $result = $stmtUsers->get_result();
                                         while($row = $result->fetch_assoc()):
                                         ?>
                                         <tr>
@@ -331,7 +359,9 @@ if(isset($_GET['delete'])){
                         <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
                         <select name="area" class="form-control mb-2" required>
                             <?php 
-                            $areas = $sqlconnection->query("SELECT * FROM tbl_area");
+                            $areas = $isGlobalAdmin
+                                ? $sqlconnection->query("SELECT * FROM tbl_area")
+                                : $sqlconnection->query("SELECT * FROM tbl_area WHERE id_area = {$areaId}");
                             while($a = $areas->fetch_assoc()) echo "<option value='{$a['id_area']}'>{$a['nombre_area']}</option>"; 
                             ?>
                         </select>
@@ -372,7 +402,9 @@ if(isset($_GET['delete'])){
                         <label>Área</label>
                         <select name="area" id="edit_area" class="form-control mb-2">
                             <?php 
-                            $areas = $sqlconnection->query("SELECT * FROM tbl_area");
+                            $areas = $isGlobalAdmin
+                                ? $sqlconnection->query("SELECT * FROM tbl_area")
+                                : $sqlconnection->query("SELECT * FROM tbl_area WHERE id_area = {$areaId}");
                             while($a = $areas->fetch_assoc()) echo "<option value='{$a['id_area']}'>{$a['nombre_area']}</option>"; 
                             ?>
                         </select>

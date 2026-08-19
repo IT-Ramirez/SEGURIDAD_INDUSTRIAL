@@ -10,15 +10,16 @@ $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false
 ]);
-$areaId = getAdminAreaId($pdo);
+$isGlobalAdmin = isGlobalAdmin();
+$areaId = $isGlobalAdmin ? null : getAdminAreaId($pdo);
 $desde = $_GET['desde'] ?? '';
 $hasta = $_GET['hasta'] ?? '';
 $fechaValida = static function (string $fecha): bool {
     $date = DateTime::createFromFormat('!Y-m-d', $fecha);
     return $date !== false && $date->format('Y-m-d') === $fecha;
 };
-$where = ['u.id_area = :area_id'];
-$params = [':area_id' => $areaId];
+$where = $isGlobalAdmin ? [] : ['u.id_area = :area_id'];
+$params = $isGlobalAdmin ? [] : [':area_id' => $areaId];
 if ($fechaValida($desde)) {
     $where[] = 'i.fecha_registro >= :desde';
     $params[':desde'] = $desde . ' 00:00:00';

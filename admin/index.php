@@ -14,15 +14,16 @@ $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
 $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ]);
-$areaId = getAdminAreaId($pdo);
+$isGlobalAdmin = isGlobalAdmin();
+$areaId = $isGlobalAdmin ? null : getAdminAreaId($pdo);
 $desde = $_GET['desde'] ?? '';
 $hasta = $_GET['hasta'] ?? '';
 $fechaValida = static function (string $fecha): bool {
     $date = DateTime::createFromFormat('!Y-m-d', $fecha);
     return $date !== false && $date->format('Y-m-d') === $fecha;
 };
-$where = ['u.id_area = :area_id'];
-$params = [':area_id' => $areaId];
+$where = $isGlobalAdmin ? [] : ['u.id_area = :area_id'];
+$params = $isGlobalAdmin ? [] : [':area_id' => $areaId];
 if ($fechaValida($desde)) {
     $where[] = 'i.fecha_registro >= :desde';
     $params[':desde'] = $desde . ' 00:00:00';
@@ -39,15 +40,15 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     try {
         $pdo->beginTransaction();
 
-        $stmtDetalles = $pdo->prepare("DELETE FROM detalles_inspeccion WHERE inspeccion_id = ?");
-        $stmtDetalles->execute([$id]);
+        $stmtDetalles = $pdo->prepare("DELETE d FROM detalles_inspeccion d INNER JOIN inspecciones i ON i.id = d.inspeccion_id INNER JOIN tbl_users u ON u.userID = i.userID WHERE d.inspeccion_id = ?" . ($isGlobalAdmin ? "" : " AND u.id_area = ?"));
+        $stmtDetalles->execute($isGlobalAdmin ? [$id] : [$id, $areaId]);
 
         $stmtInspeccion = $pdo->prepare(
             "DELETE i FROM inspecciones i
              INNER JOIN tbl_users u ON u.userID = i.userID
-             WHERE i.id = ? AND u.id_area = ?"
+             WHERE i.id = ?" . ($isGlobalAdmin ? "" : " AND u.id_area = ?")
         );
-        $stmtInspeccion->execute([$id, $areaId]);
+        $stmtInspeccion->execute($isGlobalAdmin ? [$id] : [$id, $areaId]);
 
         $pdo->commit();
         header("Location: index.php");

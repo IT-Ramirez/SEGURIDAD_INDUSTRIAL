@@ -1,5 +1,10 @@
 <?php
 
+function isGlobalAdmin(): bool
+{
+    return strtolower((string)($_SESSION['username'] ?? '')) === 'itadmin';
+}
+
 function getAdminAreaId(PDO $pdo): int
 {
     if (isset($_SESSION['admin_area_id']) && (int)$_SESSION['admin_area_id'] > 0) {

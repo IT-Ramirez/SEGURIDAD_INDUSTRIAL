@@ -10,7 +10,8 @@ $dsn = "mysql:host=$servername;dbname=$dbname;charset=utf8mb4";
 $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 ]);
-$areaId = getAdminAreaId($pdo);
+$isGlobalAdmin = isGlobalAdmin();
+$areaId = $isGlobalAdmin ? null : getAdminAreaId($pdo);
 
 // Validar ID de inspección
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -25,9 +26,9 @@ $stmt = $pdo->prepare(
     "SELECT i.id, i.nombre_conductor, i.odometro, i.observaciones, i.estado, i.fecha_registro, i.codigo_vehiculo, i.placa
     FROM inspecciones i
     INNER JOIN tbl_users u ON u.userID = i.userID
-    WHERE i.id = ? AND u.id_area = ?"
+    WHERE i.id = ?" . ($isGlobalAdmin ? "" : " AND u.id_area = ?")
 );
-$stmt->execute([$id, $areaId]);
+$stmt->execute($isGlobalAdmin ? [$id] : [$id, $areaId]);
 $inspeccion = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$inspeccion) {
