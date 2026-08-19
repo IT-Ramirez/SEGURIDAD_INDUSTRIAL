@@ -11,7 +11,7 @@
                     <?= $header_actions ?>
                 <?php else: ?>
                     <div class="dropdown">
-                        <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-bs-toggle="dropdown">
+                        <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border-0" type="button" data-bs-toggle="dropdown" data-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle fs-5"></i>
                              <span class="d-none d-md-inline fw-medium "><?= isset($_SESSION['nombre_empleado']) ? htmlspecialchars($_SESSION['nombre_empleado'], ENT_QUOTES, 'UTF-8') : 'Usuario' ?></span>
                         </button>

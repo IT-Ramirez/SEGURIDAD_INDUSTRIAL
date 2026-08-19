@@ -316,11 +316,11 @@ if(isset($_GET['delete'])){
                                         ?>
                                         <tr>
                                             <td><?php echo "N/D"; ?></td>
-                                            <td><?php echo htmlspecialchars($row['nombre_empleado']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['nombre_area'] ?? 'Sin Área'); ?></td>
-                                            <td><?php echo htmlspecialchars($row['CECO'] ?? 'Sin CECO'); ?></td>
-                                            <td><?php echo htmlspecialchars($row['clasificacion'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($row['nombre_empleado'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars($row['nombre_area'] ?? 'Sin Área', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars($row['CECO'] ?? 'Sin CECO', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?php echo htmlspecialchars($row['clasificacion'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <button class="btn btn-sm btn-primary edit-btn" 
                                                     data-id="<?php echo $row['userID']; ?>"
