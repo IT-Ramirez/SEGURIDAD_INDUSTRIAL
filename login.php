@@ -257,7 +257,7 @@ if(isset($_POST['addstaff'])){
                 Ingresar al Sistema
             </button>
 
-            <div class="text-center small">
+            <div class="text-center small" hidden>
                 <span class="text-muted">¿Eres nuevo en la unidad?</span><br>
                 <a href="#" class="btn-register-link" data-toggle="modal" data-target="#addStaffModal">
                     Registrarme ahora

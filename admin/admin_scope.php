@@ -2,7 +2,8 @@
 
 function isGlobalAdmin(): bool
 {
-    return strtolower((string)($_SESSION['username'] ?? '')) === 'itadmin';
+    $globalAdmins = ['itadmin', 'maria.soriano', 'sixto.galvez', 'joshoa.meza'];
+    return in_array(strtolower((string)($_SESSION['username'] ?? '')), $globalAdmins, true);
 }
 
 function getAdminAreaId(PDO $pdo): int
