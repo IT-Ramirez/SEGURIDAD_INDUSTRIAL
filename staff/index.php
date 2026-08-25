@@ -170,6 +170,9 @@
                                             <option value="1/4 (Un cuarto): 25%">1/4 (Un cuarto): 25%</option>
                                             <option value="Full (Lleno): 100%">Full (Lleno): 100%</option>
                                         </select>
+                                        <div id="alerta-combustible" class="alert alert-warning mt-2 mb-0 d-none" role="alert" aria-live="polite">
+                                            <i class="bi bi-fuel-pump-fill me-1"></i><strong>Rellenar combustible:</strong> el tanque está en ¼ de su capacidad.
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr>
@@ -201,5 +204,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const nivelCombustible = document.getElementById('nivel_combustible');
+    const alertaCombustible = document.getElementById('alerta-combustible');
+
+    nivelCombustible.addEventListener('change', function () {
+        alertaCombustible.classList.toggle('d-none', this.value !== '1/4 (Un cuarto): 25%');
+    });
+</script>
 </body>
 </html>
