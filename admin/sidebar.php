@@ -26,10 +26,12 @@
         <li class="nav-item mt-4">
             <span class="px-3 text-uppercase text-muted small fw-bold">Configuración</span>
         </li>
+        <!--
         <li class="nav-item">
             <a href="#" class="nav-link">
                 <i class="bi bi-truck"></i> Vehículos
             </a>
+-->
         </li>
         <li class="nav-item">
             <a href="staff.php" class="nav-link">
