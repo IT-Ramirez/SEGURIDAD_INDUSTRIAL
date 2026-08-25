@@ -408,13 +408,16 @@ require_once("../config.php");
                                 <tr>
                                     <td class="px-3 py-2 fw-medium text-dark">Nivel de Combustible</td>
                                     <td class="text-center py-2">
-                                        <select name="nivel_combustible" class="form-select" required>
+                                        <select name="nivel_combustible" id="nivel_combustible" class="form-select" required>
                                             <option value="">Seleccione...</option>
                                             <option value="3/4 (Tres cuartos): 75%">3/4 (Tres cuartos): 75%</option>
                                             <option value="1/2 (Medio): 50%">1/2 (Medio): 50%</option>
                                             <option value="1/4 (Un cuarto): 25%">1/4 (Un cuarto): 25%</option>
                                             <option value="Full (Lleno): 100%">Full (Lleno): 100%</option>
                                         </select>
+                                        <div id="alerta-combustible" class="alert alert-warning mt-2 mb-0 d-none" role="alert" aria-live="polite">
+                                            <i class="bi bi-fuel-pump-fill me-1"></i><strong>Rellenar combustible:</strong> el tanque está en ¼ de su capacidad.
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr>
@@ -480,6 +483,13 @@ sidebarLinks.forEach(function(link) {
             document.querySelector('.wrapper')?.classList.remove('sidebar-open');
         }
     });
+});
+
+const nivelCombustible = document.getElementById('nivel_combustible');
+const alertaCombustible = document.getElementById('alerta-combustible');
+
+nivelCombustible.addEventListener('change', function() {
+    alertaCombustible.classList.toggle('d-none', this.value !== '1/4 (Un cuarto): 25%');
 });
 </script>
 </body>
