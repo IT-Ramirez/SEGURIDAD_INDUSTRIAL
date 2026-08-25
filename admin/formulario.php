@@ -281,13 +281,10 @@ require_once("../config.php");
         <main class="p-4">
             <div class="container-fluid p-0">
                 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                  
-
                     <div class="d-flex gap-2">
                         <a href="formulario.php" class="btn btn-eqx-gold btn-sm">
                             <i class="bi bi-plus-circle me-1"></i> Nueva Inspección
                         </a>
-
                         <a href="index.php" class="btn btn-eqx-gold btn-sm">
                             <i class="bi bi-list-check me-1"></i> Ver Inspecciones
                         </a>
@@ -434,7 +431,6 @@ require_once("../config.php");
                         <label class="form-label fw-semibold">Observaciones / Notas:</label>
                         <textarea name="observaciones" class="form-control" rows="3" placeholder="Detalle cualquier anomalía o hallazgo relevante..." maxlength="1000"></textarea>
                     </div>
-
                     <div class="btn-action-area">
                         <button type="submit" class="btn btn-eqx-gold btn-lg shadow-sm fw-bold">
                             <i class="bi bi-file-earmark-pdf me-2"></i>Enviar y Generar PDF
