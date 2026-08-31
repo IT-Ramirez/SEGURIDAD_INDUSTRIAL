@@ -478,8 +478,8 @@ if(isset($_GET['delete'])){
                         </select>
                         <label>CECO</label>
                         <input type="text" name="ceco" id="edit_ceco" class="form-control mb-2">
-                        <label>Contraseña (opcional)</label>
-                        <input type="password" name="password" class="form-control">
+                      <label>Contraseña (opcional)</label>
+                      <input type="password" name="password" class="form-control" autocomplete="new-password">
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="updateStaff" class="btn btn-primary">Actualizar</button>
