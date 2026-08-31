@@ -371,7 +371,7 @@ if(isset($_GET['delete'])){
                             while($r = $roles->fetch_assoc()) echo "<option value='{$r['roleID']}'>{$r['role']}</option>"; 
                             ?>
                         </select>
-                        <input type="text" name="ceco" class="form-control mb-2" placeholder="CECO" required>
+                        <input type="text" name="ceco" class="form-control mb-2" placeholder="CECO (opcional)">
                         <select name="clasificacion" class="form-control mb-2">
                             <option value="Operacion">OPERACIÓN</option>
                             <option value="Visita">VISITA</option>
@@ -434,7 +434,7 @@ if(isset($_GET['delete'])){
                             <option value="MULTI SERVICIOS INTOCO">MULTI SERVICIOS INTOCO</option>
                             <option value="INGSERSA">INGSERSA</option>
                         </select>
-                        <input type="text" name="planilla" class="form-control" placeholder="Planilla" required>
+                     <!--   <input type="text" name="planilla" class="form-control" placeholder="Planilla" required> -->
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="addstaff" class="btn btn-success">Guardar</button>
