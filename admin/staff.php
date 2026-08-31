@@ -25,48 +25,52 @@ if(isset($_GET['msg'])) {
 }
 
 if(isset($_POST['addstaff'])){
-    $codigo = $_POST['id_empleado'];
-    $name = $_POST['staffname'];
-    $username = strtolower(str_replace(' ', '.', $_POST['username'])); 
-    $email = $_POST['email']; 
+    $codigo = (int)$_POST['id_empleado'];
+    $name = trim($_POST['staffname']);
+    $username = strtolower(str_replace(' ', '.', trim($_POST['username']))); 
+    $email = trim($_POST['email']); 
     $area = $isGlobalAdmin ? (int)$_POST['area'] : $areaId;
     $role = (int)$_POST['staffrole'];
-    $ceco = $_POST['ceco'];
-    $clasificacion = $_POST['clasificacion'];
-    $planilla = $_POST['planilla'];
+    $ceco = trim($_POST['ceco']);
+    $clasificacion = trim($_POST['clasificacion']);
+    $planilla = isset($_POST['planilla']) ? trim($_POST['planilla']) : '';
     $password = password_hash((string)$codigo, PASSWORD_DEFAULT);
 
-    // Verificación duplicados (Username o Email)
-    $check = $sqlconnection->prepare("SELECT COUNT(*) FROM tbl_users WHERE username=? OR email=?");
-    $check->bind_param("ss", $username, $email);
+    // Verificación de duplicados (userID, Username o Email)
+    $check = $sqlconnection->prepare("SELECT COUNT(*) FROM tbl_users WHERE userID=? OR username=? OR email=?");
+    $check->bind_param("iss", $codigo, $username, $email);
     $check->execute();
     $check->bind_result($count);
     $check->fetch();
     $check->close();
 
     if($count > 0){
-        $error = "⚠️ El usuario o el email ya existen.";
+        $error = "⚠️ El ID de empleado, usuario o email ya se encuentra registrado.";
     } else {
-        $stmt = $sqlconnection->prepare("INSERT INTO tbl_users(userID, nombre_empleado, username, email, id_area, roleID, CECO, password, clasificacion, planilla, status) VALUES(?,?,?,?,?,?,?,?,?,?,'Offline')");
-        $stmt->bind_param("isssisssss", $codigo, $name, $username, $email, $area, $role, $ceco, $password, $clasificacion, $planilla);
+        try {
+            $stmt = $sqlconnection->prepare("INSERT INTO tbl_users(userID, nombre_empleado, username, email, id_area, roleID, CECO, password, clasificacion, planilla, status) VALUES(?,?,?,?,?,?,?,?,?,?,'Offline')");
+            $stmt->bind_param("isssisssss", $codigo, $name, $username, $email, $area, $role, $ceco, $password, $clasificacion, $planilla);
 
-        if($stmt->execute()){
-            header("Location: staff.php?msg=added");
-            exit();
-        } else {
-            $error = "Error al insertar: " . $stmt->error;
+            if($stmt->execute()){
+                header("Location: staff.php?msg=added");
+                exit();
+            } else {
+                $error = "Error al insertar: " . $stmt->error;
+            }
+        } catch (mysqli_sql_exception $e) {
+            $error = "⚠️ Error de base de datos: El código de empleado ya existe o datos no válidos.";
         }
     }
 }
 
 if(isset($_POST['updateStaff'])){
     $id = (int)$_POST['staffID'];
-    $name = $_POST['staffname'];
-    $username = $_POST['username'];
-    $email = $_POST['email']; 
+    $name = trim($_POST['staffname']);
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']); 
     $area = (int)$_POST['area'];
     $role = (int)$_POST['role'];
-    $ceco = $_POST['ceco'];
+    $ceco = trim($_POST['ceco']);
     $password = $_POST['password'];
 
     if(!empty($password)){
@@ -279,10 +283,10 @@ if(isset($_GET['delete'])){
                     </div>
 
                     <?php if($error): ?>
-                        <div class="alert alert-danger"><?php echo $error; ?></div>
+                        <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
                     <?php endif; ?>
                     <?php if($success): ?>
-                        <div class="alert alert-success"><?php echo $success; ?></div>
+                        <div class="alert alert-success"><?php echo htmlspecialchars($success, ENT_QUOTES, 'UTF-8'); ?></div>
                     <?php endif; ?>
 
                     <div class="card mb-4 shadow-sm border-0 rounded-3">
@@ -315,7 +319,7 @@ if(isset($_GET['delete'])){
                                         while($row = $result->fetch_assoc()):
                                         ?>
                                         <tr>
-                                            <td><?php echo "N/D"; ?></td>
+                                            <td><?php echo htmlspecialchars($row['userID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?php echo htmlspecialchars($row['nombre_empleado'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?php echo htmlspecialchars($row['nombre_area'] ?? 'Sin Área', ENT_QUOTES, 'UTF-8'); ?></td>
@@ -434,7 +438,6 @@ if(isset($_GET['delete'])){
                             <option value="MULTI SERVICIOS INTOCO">MULTI SERVICIOS INTOCO</option>
                             <option value="INGSERSA">INGSERSA</option>
                         </select>
-                     <!--   <input type="text" name="planilla" class="form-control" placeholder="Planilla" required> -->
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="addstaff" class="btn btn-success">Guardar</button>
