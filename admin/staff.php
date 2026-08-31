@@ -476,7 +476,7 @@ if(isset($_GET['delete'])){
                             while($r = $roles->fetch_assoc()) echo "<option value='{$r['roleID']}'>{$r['role']}</option>"; 
                             ?>
                         </select>
-                        <label>CECO</label>
+                        <label>CECO (Opcional)</label>
                         <input type="text" name="ceco" id="edit_ceco" class="form-control mb-2">
                       <label>Contraseña (opcional)</label>
                       <input type="password" name="password" class="form-control" autocomplete="new-password">
