@@ -370,6 +370,7 @@ if(isset($_GET['delete'])){
                             ?>
                         </select>
                         <select name="staffrole" class="form-control mb-2" required>
+                             <option value="">Seleccione un rol</option>
                             <?php 
                             $roles = $sqlconnection->query("SELECT * FROM tbl_role");
                             while($r = $roles->fetch_assoc()) echo "<option value='{$r['roleID']}'>{$r['role']}</option>"; 
