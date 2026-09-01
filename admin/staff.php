@@ -362,6 +362,7 @@ if(isset($_GET['delete'])){
                         <input type="text" name="username" class="form-control mb-2" placeholder="Username" required>
                         <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
                         <select name="area" class="form-control mb-2" required>
+                             <option value="">Seleccione un área</option>
                             <?php 
                             $areas = $isGlobalAdmin
                                 ? $sqlconnection->query("SELECT * FROM tbl_area")
