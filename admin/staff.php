@@ -471,6 +471,7 @@ if(isset($_GET['delete'])){
                         </select>
                         <label>Rol</label>
                         <select name="role" id="edit_role" class="form-control mb-2">
+                            <option value="">Seleccione un rol</option>
                             <?php 
                             $roles = $sqlconnection->query("SELECT * FROM tbl_role");
                             while($r = $roles->fetch_assoc()) echo "<option value='{$r['roleID']}'>{$r['role']}</option>"; 
