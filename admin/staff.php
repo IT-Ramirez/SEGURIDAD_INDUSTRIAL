@@ -311,7 +311,7 @@ if(isset($_GET['delete'])){
                                                                      FROM tbl_users u 
                                                                      LEFT JOIN tbl_area a ON u.id_area = a.id_area 
                                                                      LEFT JOIN tbl_role r ON u.roleID = r.roleID 
-                                                                     WHERE " . ($isGlobalAdmin ? "1=1" : "u.username != 'itadmin' AND u.id_area = ?");
+                                                                     WHERE u.username != 'itadmin'" . ($isGlobalAdmin ? "" : " AND u.id_area = ?");
                                         $stmtUsers = $sqlconnection->prepare($usersQuery);
                                         if (!$isGlobalAdmin) $stmtUsers->bind_param("i", $areaId);
                                         $stmtUsers->execute();
