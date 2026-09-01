@@ -1,4 +1,7 @@
-<?php include 'obtener_pdf.php'; ?>
+<?php include 'obtener_pdf.php'; 
+session_start();
+include_once '../session_check.php';
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
