@@ -217,6 +217,143 @@ if(isset($_GET['delete'])){
             color: #ffffff;
         }
 
+        .staff-modal .modal-content {
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 45px rgba(36, 65, 93, 0.18);
+        }
+
+        .staff-modal .modal-header {
+            background: linear-gradient(135deg, var(--eqx-dark) 0%, #1c2d3f 100%);
+            color: #fff;
+            border-bottom: 0;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .staff-modal .modal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .staff-modal .modal-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(197, 155, 39, 0.16);
+            color: var(--eqx-gold);
+            font-size: 1.1rem;
+        }
+
+        .staff-modal .modal-header h5 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .staff-modal .modal-header p {
+            margin: 0.2rem 0 0;
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .staff-modal .modal-body {
+            background: #f8fafc;
+            padding: 1.4rem 1.5rem 1rem;
+        }
+
+        .staff-modal .form-section {
+            background: #fff;
+            border: 1px solid #e9edf3;
+            border-radius: 14px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .staff-modal .form-section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--eqx-dark);
+            margin-bottom: 0.9rem;
+        }
+
+        .staff-modal .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .staff-modal .form-group {
+            margin-bottom: 0;
+        }
+
+        .staff-modal .form-label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.4rem;
+        }
+
+        .staff-modal .form-control,
+        .staff-modal .custom-select {
+            border: 1px solid #dfe7f1;
+            border-radius: 10px;
+            background: #fff;
+            padding: 0.7rem 0.8rem;
+            font-size: 0.92rem;
+            color: #17212d;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .staff-modal .form-control:focus,
+        .staff-modal .custom-select:focus {
+            border-color: rgba(197, 155, 39, 0.7);
+            box-shadow: 0 0 0 0.2rem rgba(197, 155, 39, 0.12);
+        }
+
+        .staff-modal .modal-footer {
+            background: #fff;
+            border-top: 1px solid #edf2f7;
+            padding: 1rem 1.5rem 1.25rem;
+            justify-content: space-between;
+        }
+
+        .staff-modal .btn-cancel {
+            background: #eef2f7;
+            color: #334155;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-weight: 600;
+        }
+
+        .staff-modal .btn-save {
+            background: linear-gradient(135deg, var(--eqx-gold) 0%, #a9831d 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(197, 155, 39, 0.35);
+        }
+
+        .staff-modal .btn-save:hover {
+            background: linear-gradient(135deg, #b88b20 0%, #8d6816 100%);
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .staff-modal .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         #sidebarToggle { display: none; }
 
         @media (max-width: 992px) {
@@ -351,98 +488,142 @@ if(isset($_GET['delete'])){
         </div>
     </div>
 
-    <div class="modal fade" id="addStaffModal" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade staff-modal" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <form method="POST">
-                    <div class="modal-header"><h5>Nuevo Usuario</h5></div>
+                    <div class="modal-header">
+                        <div class="modal-title-wrap">
+                            <div class="modal-icon"><i class="fa fa-user-plus"></i></div>
+                            <div>
+                                <h5 id="addStaffModalLabel">Nuevo Usuario</h5>
+                                <p>Completa los datos para registrar una nueva cuenta.</p>
+                            </div>
+                        </div>
+                    </div>
                     <div class="modal-body">
-                        <input type="number" name="id_empleado" class="form-control mb-2" placeholder="ID Empleado" required>
-                        <input type="text" name="staffname" class="form-control mb-2" placeholder="Nombre Completo" required>
-                        <input type="text" name="username" class="form-control mb-2" placeholder="Username" required>
-                        <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
-                        <select name="area" class="form-control mb-2" required>
-                             <option value="">Seleccione un área</option>
-                            <?php 
-                            $areas = $isGlobalAdmin
-                                ? $sqlconnection->query("SELECT * FROM tbl_area")
-                                : $sqlconnection->query("SELECT * FROM tbl_area WHERE id_area = {$areaId}");
-                            while($a = $areas->fetch_assoc()) echo "<option value='{$a['id_area']}'>{$a['nombre_area']}</option>"; 
-                            ?>
-                        </select>
-                        <select name="staffrole" class="form-control mb-2" required>
-                             <option value="">Seleccione un rol</option>
-                            <?php 
-                            $roles = $sqlconnection->query("SELECT * FROM tbl_role");
-                            while($r = $roles->fetch_assoc()) echo "<option value='{$r['roleID']}'>{$r['role']}</option>"; 
-                            ?>
-                        </select>
-                        <input type="text" name="ceco" class="form-control mb-2" placeholder="CECO (opcional)">
-                        <select name="clasificacion" class="form-control mb-2">
-                            <option value="Operacion">OPERACIÓN</option>
-                            <option value="Visita">VISITA</option>
-                            <option value="ANXOR INGENIERIA">ANXOR INGENIERIA</option>
-                            <option value="AQUATEC">AQUATEC</option>
-                            <option value="AVIMOR">AVIMOR</option>
-                            <option value="CENTRAL HIDRAULICA">CENTRAL HIDRAULICA</option>
-                            <option value="CONEQUISA">CONEQUISA</option>
-                            <option value="Constructora KPD">Constructora KPD</option>
-                            <option value="CONSTRUMARKET DE NICARAGUA">CONSTRUMARKET DE NICARAGUA</option>
-                            <option value="EL DORADO, S. A.">EL DORADO, S. A.</option>
-                            <option value="GUNNER CRUZ">GUNNER CRUZ</option>
-                            <option value="HG TRANSPORTE">HG TRANSPORTE</option>
-                            <option value="HVASCO S.A.">HVASCO S.A.</option>
-                            <option value="JOHN MAY">JOHN MAY</option>
-                            <option value="KLUANE NICARAGUA">KLUANE NICARAGUA</option>
-                            <option value="LA CASA DEL PERNO, S.A.">LA CASA DEL PERNO, S.A.</option>
-                            <option value="MINPRO">MINPRO</option>
-                            <option value="MULTISERVICIOS METAL MECANICA CIVILES Y ELECTRICOS">MULTISERVICIOS METAL MECANICA CIVILES Y ELECTRICOS</option>
-                            <option value="NICARAGUA INGENIEROS">NICARAGUA INGENIEROS</option>
-                            <option value="ROLSA">ROLSA</option>
-                            <option value="SEMANIC">SEMANIC</option>
-                            <option value="Servicios Mineros de Nicaragua">Servicios Mineros de Nicaragua</option>
-                            <option value="SERVICIOS VARIOS CASTELLON">SERVICIOS VARIOS CASTELLON</option>
-                            <option value="SINSA">SINSA</option>
-                            <option value="SKAVA">SKAVA</option>
-                            <option value="SST">SST</option>
-                            <option value="WILFREDO SORIANO ROSTRAN">WILFREDO SORIANO ROSTRAN</option>
-                            <option value="CORPORACIÓN DE SEGURIDAD INTERNACIONAL, S.A">CORPORACIÓN DE SEGURIDAD INTERNACIONAL, S.A</option>
-                            <option value="GEMCO">GEMCO</option>
-                            <option value="GAUBYSA">GAUBYSA</option>
-                            <option value="MULTISERVICIOS QUINTANILLA">MULTISERVICIOS QUINTANILLA</option>
-                            <option value="Metal Mecanica">Metal Mecanica</option>
-                            <option value="DME">DME</option>
-                            <option value="IMPELCO">IMPELCO</option>
-                            <option value="Valerio Construcciones">Valerio Construcciones</option>
-                            <option value="EXPLOTEC">EXPLOTEC</option>
-                            <option value="NIMAC">NIMAC</option>
-                            <option value="DIMELCO">DIMELCO</option>
-                            <option value="ABELARDO CRUZ BLANCO">ABELARDO CRUZ BLANCO</option>
-                            <option value="Transporte Castro">Transporte Castro</option>
-                            <option value="Bienes y Servicios Martinez">Bienes y Servicios Martinez</option>
-                            <option value="Juan Zapata">Juan Zapata</option>
-                            <option value="Transporte Valdez">Transporte Valdez</option>
-                            <option value="Santa Bárbara">Santa Bárbara</option>
-                            <option value="Transporte Rivera">Transporte Rivera</option>
-                            <option value="VITCAS">VITCAS</option>
-                            <option value="POL FRIO">POL FRIO</option>
-                            <option value="Transporte la Bendición">Transporte la Bendición</option>
-                            <option value="Angel Rodriguez">Angel Rodriguez</option>
-                            <option value="INVERZA">INVERZA</option>
-                            <option value="MECO">MECO</option>
-                            <option value="CRUZ AMPARO MEDINA">CRUZ AMPARO MEDINA</option>
-                            <option value="MASTER DRILLING NICARAGUA">MASTER DRILLING NICARAGUA</option>
-                            <option value="TRITECH NICARAGUA">TRITECH NICARAGUA</option>
-                            <option value="TGI">TGI</option>
-                            <option value="Servicios Varios Gonzalez">Servicios Varios Gonzalez</option>
-                            <option value="ENYELD EMILIO GONZALES PAIZ">ENYELD EMILIO GONZALES PAIZ</option>
-                            <option value="STEELMAX">STEELMAX</option>
-                            <option value="MULTI SERVICIOS INTOCO">MULTI SERVICIOS INTOCO</option>
-                            <option value="INGSERSA">INGSERSA</option>
-                        </select>
+                        <div class="form-section">
+                            <div class="form-section-title">Datos personales</div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="add_id_empleado">ID Empleado</label>
+                                    <input type="number" id="add_id_empleado" name="id_empleado" class="form-control" placeholder="Ej. 4567" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="add_staffname">Nombre completo</label>
+                                    <input type="text" id="add_staffname" name="staffname" class="form-control" placeholder="Nombre y apellido" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="add_username">Usuario</label>
+                                    <input type="text" id="add_username" name="username" class="form-control" placeholder="usuario.nombre" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="add_email">Correo electrónico</label>
+                                    <input type="email" id="add_email" name="email" class="form-control" placeholder="correo@empresa.com" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">Acceso y asignación</div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="add_area">Área</label>
+                                    <select id="add_area" name="area" class="form-control" required>
+                                        <option value="">Seleccione un área</option>
+                                        <?php 
+                                        $areas = $isGlobalAdmin
+                                            ? $sqlconnection->query("SELECT * FROM tbl_area")
+                                            : $sqlconnection->query("SELECT * FROM tbl_area WHERE id_area = {$areaId}");
+                                        while($a = $areas->fetch_assoc()) echo "<option value='{$a['id_area']}'>{$a['nombre_area']}</option>"; 
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="add_staffrole">Rol</label>
+                                    <select id="add_staffrole" name="staffrole" class="form-control" required>
+                                        <option value="">Seleccione un rol</option>
+                                        <?php 
+                                        $roles = $sqlconnection->query("SELECT * FROM tbl_role");
+                                        while($r = $roles->fetch_assoc()) echo "<option value='{$r['roleID']}'>{$r['role']}</option>"; 
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="add_ceco">CECO</label>
+                                    <input type="text" id="add_ceco" name="ceco" class="form-control" placeholder="CECO (opcional)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="add_clasificacion">Clasificación</label>
+                                    <select id="add_clasificacion" name="clasificacion" class="form-control">
+                                        <option value="Operacion">OPERACIÓN</option>
+                                        <option value="Visita">VISITA</option>
+                                        <option value="ANXOR INGENIERIA">ANXOR INGENIERIA</option>
+                                        <option value="AQUATEC">AQUATEC</option>
+                                        <option value="AVIMOR">AVIMOR</option>
+                                        <option value="CENTRAL HIDRAULICA">CENTRAL HIDRAULICA</option>
+                                        <option value="CONEQUISA">CONEQUISA</option>
+                                        <option value="Constructora KPD">Constructora KPD</option>
+                                        <option value="CONSTRUMARKET DE NICARAGUA">CONSTRUMARKET DE NICARAGUA</option>
+                                        <option value="EL DORADO, S. A.">EL DORADO, S. A.</option>
+                                        <option value="GUNNER CRUZ">GUNNER CRUZ</option>
+                                        <option value="HG TRANSPORTE">HG TRANSPORTE</option>
+                                        <option value="HVASCO S.A.">HVASCO S.A.</option>
+                                        <option value="JOHN MAY">JOHN MAY</option>
+                                        <option value="KLUANE NICARAGUA">KLUANE NICARAGUA</option>
+                                        <option value="LA CASA DEL PERNO, S.A.">LA CASA DEL PERNO, S.A.</option>
+                                        <option value="MINPRO">MINPRO</option>
+                                        <option value="MULTISERVICIOS METAL MECANICA CIVILES Y ELECTRICOS">MULTISERVICIOS METAL MECANICA CIVILES Y ELECTRICOS</option>
+                                        <option value="NICARAGUA INGENIEROS">NICARAGUA INGENIEROS</option>
+                                        <option value="ROLSA">ROLSA</option>
+                                        <option value="SEMANIC">SEMANIC</option>
+                                        <option value="Servicios Mineros de Nicaragua">Servicios Mineros de Nicaragua</option>
+                                        <option value="SERVICIOS VARIOS CASTELLON">SERVICIOS VARIOS CASTELLON</option>
+                                        <option value="SINSA">SINSA</option>
+                                        <option value="SKAVA">SKAVA</option>
+                                        <option value="SST">SST</option>
+                                        <option value="WILFREDO SORIANO ROSTRAN">WILFREDO SORIANO ROSTRAN</option>
+                                        <option value="CORPORACIÓN DE SEGURIDAD INTERNACIONAL, S.A">CORPORACIÓN DE SEGURIDAD INTERNACIONAL, S.A</option>
+                                        <option value="GEMCO">GEMCO</option>
+                                        <option value="GAUBYSA">GAUBYSA</option>
+                                        <option value="MULTISERVICIOS QUINTANILLA">MULTISERVICIOS QUINTANILLA</option>
+                                        <option value="Metal Mecanica">Metal Mecanica</option>
+                                        <option value="DME">DME</option>
+                                        <option value="IMPELCO">IMPELCO</option>
+                                        <option value="Valerio Construcciones">Valerio Construcciones</option>
+                                        <option value="EXPLOTEC">EXPLOTEC</option>
+                                        <option value="NIMAC">NIMAC</option>
+                                        <option value="DIMELCO">DIMELCO</option>
+                                        <option value="ABELARDO CRUZ BLANCO">ABELARDO CRUZ BLANCO</option>
+                                        <option value="Transporte Castro">Transporte Castro</option>
+                                        <option value="Bienes y Servicios Martinez">Bienes y Servicios Martinez</option>
+                                        <option value="Juan Zapata">Juan Zapata</option>
+                                        <option value="Transporte Valdez">Transporte Valdez</option>
+                                        <option value="Santa Bárbara">Santa Bárbara</option>
+                                        <option value="Transporte Rivera">Transporte Rivera</option>
+                                        <option value="VITCAS">VITCAS</option>
+                                        <option value="POL FRIO">POL FRIO</option>
+                                        <option value="Transporte la Bendición">Transporte la Bendición</option>
+                                        <option value="Angel Rodriguez">Angel Rodriguez</option>
+                                        <option value="INVERZA">INVERZA</option>
+                                        <option value="MECO">MECO</option>
+                                        <option value="CRUZ AMPARO MEDINA">CRUZ AMPARO MEDINA</option>
+                                        <option value="MASTER DRILLING NICARAGUA">MASTER DRILLING NICARAGUA</option>
+                                        <option value="TRITECH NICARAGUA">TRITECH NICARAGUA</option>
+                                        <option value="TGI">TGI</option>
+                                        <option value="Servicios Varios Gonzalez">Servicios Varios Gonzalez</option>
+                                        <option value="ENYELD EMILIO GONZALES PAIZ">ENYELD EMILIO GONZALES PAIZ</option>
+                                        <option value="STEELMAX">STEELMAX</option>
+                                        <option value="MULTI SERVICIOS INTOCO">MULTI SERVICIOS INTOCO</option>
+                                        <option value="INGSERSA">INGSERSA</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" name="addstaff" class="btn btn-success">Guardar</button>
+                        <button type="button" class="btn btn-cancel" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" name="addstaff" class="btn btn-save">Guardar Usuario</button>
                     </div>
                 </form>
             </div>
