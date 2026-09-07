@@ -216,7 +216,7 @@ if(isset($_POST['addstaff'])){
 <body>
     <div class="card-login shadow">
         <div class="text-center">
-          <img src="./image/equinox.png" class="brand-logo" alt="Equinox Gold" style="width: 80px; height: auto;">
+          <img src="./image/equinox.png" class="brand-logo" alt="Equinox Gold" style="width: 150px; height: auto;">
             <div class="brand-text">
                 <span style="color: var(--primary-blue);">SERVI</span><span style="color: var(--accent-gold);">APP</span>
             </div>
