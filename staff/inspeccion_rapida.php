@@ -80,7 +80,7 @@ include_once '../session_check.php';
                     </div>
                 <?php endif; ?>
 
-                <form method="POST">
+                <form method="POST" onsubmit="return confirm('⚠️ AVISO: Este es un llenado rápido EXPERIMENTAL. El desarrollador del sitio no se hace responsable del uso que se le dé a esta funcionalidad. ¿Deseas continuar?');">
                     <!-- Field para Token CSRF -->
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="generar_pdf" value="1">
@@ -89,11 +89,11 @@ include_once '../session_check.php';
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Placa:</label>
                             <!-- name="placa" para recibirlo directo en PHP -->
-                            <input type="text" name="placa" id="placa" class="form-control" placeholder="Ingrese vehículo / placa" required>
+                            <input type="text" name="placa" id="placa" class="form-control" placeholder="Ingrese vehículo / placa" value="M444922" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Código del Vehículo:</label>
-                            <input type="text" name="codigo_vehiculo" id="codigo_vehiculo" class="form-control" placeholder="Ejemp: UG-01" required>
+                            <input type="text" name="codigo_vehiculo" id="codigo_vehiculo" class="form-control" placeholder="Ejemp: UG-01" value="ADMIN-01" required>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">Hora:</label>
@@ -129,7 +129,7 @@ include_once '../session_check.php';
                                 <tr>
                                     <td class="py-3">
                                         <div class="btn-group status-group" role="group">
-                                            <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required>
+                                            <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required checked>
                                             <label class="btn btn-outline-correct" for="c_<?= $i ?>">
                                                 <i class="bi bi-check-lg me-1"></i>Cumple
                                             </label>
@@ -161,10 +161,10 @@ include_once '../session_check.php';
                                     <td class="py-3">
                                         <div class="fw-medium text-dark mb-2"><?= htmlspecialchars($etiquetaCampo, ENT_QUOTES, 'UTF-8') ?></div>
                                         <div class="btn-group status-group" role="group">
-                                            <?php $esFatiga = $nombreCampo === 'fatiga'; ?>
-                                            <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>" value="<?= $esFatiga ? 'SI' : 'C' ?>" required>
+                                            <?php $esFatiga = $nombreCampo === 'fatiga'; $esRadioBase = $nombreCampo === 'radio_base'; ?>
+                                            <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>" value="<?= $esFatiga ? 'SI' : 'C' ?>" required <?= !$esFatiga && !$esRadioBase ? 'checked' : '' ?>>
                                             <label class="btn <?= $esFatiga ? 'btn-outline-incorrect' : 'btn-outline-correct' ?>" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>"><?= $esFatiga ? 'SI' : '<i class="bi bi-check-lg me-1"></i>Cumple' ?></label>
-                                            <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>" value="<?= $esFatiga ? 'NO' : 'I' ?>" required>
+                                            <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>" value="<?= $esFatiga ? 'NO' : 'I' ?>" required <?= $esFatiga ? '' : ($esRadioBase ? 'checked' : '') ?>>
                                             <label class="btn <?= $esFatiga ? 'btn-outline-correct' : 'btn-outline-incorrect' ?>" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>"><?= $esFatiga ? 'NO' : '<i class="bi bi-x-lg me-1"></i>No cumple' ?></label>
                                         </div>
                                     </td>
