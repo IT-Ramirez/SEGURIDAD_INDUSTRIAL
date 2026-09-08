@@ -3,7 +3,7 @@
 function isGlobalAdmin(): bool
 {
     $globalAdmins = ['itadmin', 'maria.soriano', 'sixto.galvez', 'joshoa.meza',
-                    'eliezer.aragon','erick.lara','tomasa.ortiz', 'grisbell.velasquez'
+                    'eliezer.aragon','erick.lara','tomasa.ortiz', 'grisbell.velasquez', 'maykeling.romero'
     ];
     return in_array(strtolower((string)($_SESSION['username'] ?? '')), $globalAdmins, true);
 }
