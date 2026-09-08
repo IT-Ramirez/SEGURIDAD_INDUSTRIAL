@@ -506,8 +506,8 @@ if(isset($_GET['delete'])){
                             <div class="form-section-title">Datos personales</div>
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label class="form-label" for="add_id_empleado">ID Empleado</label>
-                                    <input type="number" id="add_id_empleado" name="id_empleado" class="form-control" placeholder="Ej. 4567" required>
+                                    <label class="form-label" for="add_id_empleado">ID Empleado</label>    
+                                    <input type="number" id="add_id_empleado" name="id_empleado" class="-control" pattern="[0-9]{4,}" title="El ID de empleado debe contener al menos 4 dígitos numéricos" inputmode="numeric" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="add_staffname">Nombre completo</label>
