@@ -129,7 +129,8 @@ include_once '../session_check.php';
                                 <tr>
                                     <td class="py-3">
                                         <div class="btn-group status-group" role="group">
-                                            <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required checked>
+                                            <?php $isNADefault = in_array($i, [13, 17, 19]); ?>
+                                            <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="c_<?= $i ?>" value="C" required <?= !$isNADefault ? 'checked' : '' ?>>
                                             <label class="btn btn-outline-correct" for="c_<?= $i ?>">
                                                 <i class="bi bi-check-lg me-1"></i>Cumple
                                             </label>
@@ -140,7 +141,7 @@ include_once '../session_check.php';
                                             </label>
 
                                             <?php if ($item['tipo'] === 'CINA'): ?>
-                                                <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="na_<?= $i ?>" value="NA" required>
+                                                <input type="radio" class="btn-check" name="evaluacion[<?= $i ?>]" id="na_<?= $i ?>" value="NA" required <?= $isNADefault ? 'checked' : '' ?>>
                                                 <label class="btn btn-outline-na" for="na_<?= $i ?>">N/A</label>
                                             <?php endif; ?>
                                         </div>

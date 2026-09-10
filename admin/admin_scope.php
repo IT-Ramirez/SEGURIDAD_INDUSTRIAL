@@ -1,5 +1,4 @@
 <?php
-
 function isGlobalAdmin(): bool
 {
     $globalAdmins = ['itadmin', 'maria.soriano', 'sixto.galvez', 'joshoa.meza',
