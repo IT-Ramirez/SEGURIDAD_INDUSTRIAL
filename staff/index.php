@@ -153,7 +153,7 @@ include_once '../session_check.php';
                                 $camposSiNo = [
                                     'cinta_precaucion' => 'Cinta de precaución amarilla/roja',
                                     'gps_activo' => 'GPS Activo',
-                                    'radio_base' => 'Radio Base / Radio Portatíl',
+                                    'radio_base' => 'Radio Base / Radio Portátil',
                                     'tarjeta_gps' => 'Tarjeta GPS',
                                     'fatiga' => '* ¿Se siente fatigado?'
                                 ];

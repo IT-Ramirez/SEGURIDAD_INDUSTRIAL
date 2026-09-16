@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $camposNuevos = [
             'Cinta de precaución amarilla/roja' => $_POST['cinta_precaucion'] ?? '',
             'GPS Activo' => $_POST['gps_activo'] ?? '',
-            'Radio Base / Radio Portatíl' => $_POST['radio_base'] ?? '',
+            'Radio Base / Radio Portátil' => $_POST['radio_base'] ?? '',
             'Tarjeta GPS' => $_POST['tarjeta_gps'] ?? '',
             '* ¿Se siente fatigado?' => $_POST['fatiga'] ?? '',
             'Nivel de Combustible' => $_POST['nivel_combustible'] ?? '',
