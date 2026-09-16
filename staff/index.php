@@ -1,5 +1,8 @@
 <?php 
 session_start();
+$mensaje = null;
+$error = null;
+$parametros = [];
 include 'obtener_pdf.php'; 
 include_once '../session_check.php';
 ?>
@@ -19,7 +22,6 @@ include_once '../session_check.php';
             flex-direction: column;
             min-height: 100vh;
         }
-
         /* Top Navbar */
         .top-navbar {
             background-color: #24415D;
@@ -151,7 +153,7 @@ include_once '../session_check.php';
                                 $camposSiNo = [
                                     'cinta_precaucion' => 'Cinta de precaución amarilla/roja',
                                     'gps_activo' => 'GPS Activo',
-                                    'radio_base' => 'Radio Base',
+                                    'radio_base' => 'Radio Base / Radio Portatíl',
                                     'tarjeta_gps' => 'Tarjeta GPS',
                                     'fatiga' => '* ¿Se siente fatigado?'
                                 ];
@@ -162,10 +164,15 @@ include_once '../session_check.php';
                                         <div class="fw-medium text-dark mb-2"><?= htmlspecialchars($etiquetaCampo, ENT_QUOTES, 'UTF-8') ?></div>
                                         <div class="btn-group status-group" role="group">
                                             <?php $esFatiga = $nombreCampo === 'fatiga'; ?>
+                                            <?php $esRadioBase = $nombreCampo === 'radio_base'; ?>
                                             <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>" value="<?= $esFatiga ? 'SI' : 'C' ?>" required>
                                             <label class="btn <?= $esFatiga ? 'btn-outline-incorrect' : 'btn-outline-correct' ?>" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'si' : 'c' ?>"><?= $esFatiga ? 'SI' : '<i class="bi bi-check-lg me-1"></i>Cumple' ?></label>
                                             <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>" value="<?= $esFatiga ? 'NO' : 'I' ?>" required>
                                             <label class="btn <?= $esFatiga ? 'btn-outline-correct' : 'btn-outline-incorrect' ?>" for="<?= $nombreCampo ?>_<?= $esFatiga ? 'no' : 'i' ?>"><?= $esFatiga ? 'NO' : '<i class="bi bi-x-lg me-1"></i>No cumple' ?></label>
+                                            <?php if ($esRadioBase): ?>
+                                                <input type="radio" class="btn-check" name="<?= $nombreCampo ?>" id="<?= $nombreCampo ?>_na" value="NA" required>
+                                                <label class="btn btn-outline-na" for="<?= $nombreCampo ?>_na">N/A</label>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>

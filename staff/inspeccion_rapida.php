@@ -1,5 +1,8 @@
 <?php 
 session_start();
+$mensaje = null;
+$error = null;
+$parametros = [];
 include 'obtener_pdf.php'; 
 include_once '../session_check.php';
 ?>

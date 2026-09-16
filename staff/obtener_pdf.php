@@ -2,7 +2,6 @@
 include '../config.php';
 date_default_timezone_set('America/Managua');
 
-
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
@@ -126,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $camposNuevos = [
             'Cinta de precaución amarilla/roja' => $_POST['cinta_precaucion'] ?? '',
             'GPS Activo' => $_POST['gps_activo'] ?? '',
-            'Radio Base' => $_POST['radio_base'] ?? '',
+            'Radio Base / Radio Portatíl' => $_POST['radio_base'] ?? '',
             'Tarjeta GPS' => $_POST['tarjeta_gps'] ?? '',
             '* ¿Se siente fatigado?' => $_POST['fatiga'] ?? '',
             'Nivel de Combustible' => $_POST['nivel_combustible'] ?? '',
@@ -138,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Debe completar el campo: ' . $nombreCampo);
         }
 
-        
         if ($odometro === false || $odometro < 0) throw new Exception('El odómetro no es válido.');
 
         $raw = $_POST['evaluacion'] ?? [];
