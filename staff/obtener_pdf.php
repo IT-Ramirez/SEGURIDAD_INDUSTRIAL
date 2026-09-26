@@ -305,9 +305,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             foreach ($camposNuevos as $nombreCampo => $valorCampo) {
-                $pdf->SetFillColor(240, 240, 240);
+                $fatigaMarcada = $nombreCampo === '* ¿Se siente fatigado?' && $valorCampo === 'SI';
+                if ($fatigaMarcada) {
+                    $pdf->SetFillColor(255, 220, 220);
+                    $pdf->SetTextColor(180, 0, 0);
+                } else {
+                    $pdf->SetFillColor(240, 240, 240);
+                    $pdf->SetTextColor(0, 0, 0);
+                }
                 $pdf->Cell(145, 4.8, fpdf_txt($nombreCampo), 1, 0, 'L');
                 $pdf->Cell(45, 4.8, fpdf_txt($valorCampo), 1, 1, 'C', true);
+                $pdf->SetTextColor(0, 0, 0);
             }
 
             $pdf->Ln(2);
