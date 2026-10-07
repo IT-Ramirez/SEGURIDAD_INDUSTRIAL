@@ -253,7 +253,9 @@ $inspecciones = $pdo->query(
                                                     <a href="view.php?id=<?= $insp['id'] ?>" class="btn btn-outline-primary" title="Ver detalles">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    
+                                                    <a href="obtener_pdf.php?id=<?= (int)$insp['id'] ?>" class="btn btn-outline-danger" title="Generar PDF" aria-label="Generar PDF de la inspección #<?= (int)$insp['id'] ?>">
+                                                        <i class="bi bi-printer"></i>
+                                                    </a>
                                                 </div>
                                             </td>
                                         </tr>

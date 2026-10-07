@@ -412,11 +412,10 @@ if(isset($_POST['addstaff'])){
                     },
                     success: function(data) {
                         data = data.trim();
-                        if (["admin", "cocinero", "empleado"].includes(data)) {
+                        if (["admin", "empleado"].includes(data)) {
                             btn.removeClass('btn-primary-custom').addClass('btn-success').html('<i class="fas fa-check"></i> Redireccionando...');
                             setTimeout(() => {
                                 if (data === "admin") window.location.href = "./admin/index.php";
-                                else if (data === "moderador") window.location.href = "./admin/index.php";
                                 else window.location.href = "./staff/index.php";
                             }, 700);
                         } else {

@@ -85,7 +85,6 @@ include_once '../session_check.php';
                 <form method="POST">
                     <!-- Field para Token CSRF -->
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
-                    <input type="hidden" name="generar_pdf" value="1">
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-3">
@@ -208,8 +207,11 @@ include_once '../session_check.php';
                     </div>
 
                     <div class="btn-action-area">
-                        <button type="submit" class="btn btn-eqx-gold w-100 btn-lg shadow-sm fw-bold">
-                            <i class="bi bi-file-earmark-pdf me-2"></i>Enviar y Generar PDF
+                        <button type="submit" class="btn btn-outline-secondary btn-lg shadow-sm fw-bold">
+                            <i class="bi bi-send me-2"></i>Enviar sin imprimir
+                        </button>
+                        <button type="submit" name="generar_pdf" value="1" class="btn btn-eqx-gold btn-lg shadow-sm fw-bold">
+                            <i class="bi bi-printer me-2"></i>Enviar e Imprimir PDF
                         </button>
                     </div>
                 </form>

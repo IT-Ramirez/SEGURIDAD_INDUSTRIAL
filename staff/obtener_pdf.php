@@ -3,6 +3,7 @@ include '../config.php';
 date_default_timezone_set('America/Managua');
 
 if (session_status() === PHP_SESSION_NONE) session_start();
+include_once '../session_check.php';
 if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
 try {
@@ -103,8 +104,218 @@ $parametros = [
     ["nombre" => "Vidrios sin fisuras / Sin Polarizado", "tipo" => "CI"],
 ];
 
+function generar_pdf_inspeccion(
+    string $placa,
+    string $codigo,
+    string $hora,
+    int $odometro,
+    string $nombre,
+    string $dictamen,
+    array $parametros,
+    array $respuestas,
+    array $camposNuevos,
+    string $observaciones,
+    ?int $inspeccionId = null
+): void {
+    if (!class_exists('PDF_Formato')) {
+        throw new RuntimeException('La librería necesaria para generar el PDF no está disponible.');
+    }
+
+    $pdf = new PDF_Formato('P', 'mm', 'A4');
+    $pdf->AliasNbPages();
+    $pdf->SetMargins(10, 10, 10);
+    $pdf->SetAutoPageBreak(true, 22);
+    $pdf->AddPage();
+
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->SetFillColor(230, 230, 230);
+    $pdf->Cell(25, 6, fpdf_txt('Placa:'), 1, 0, 'L', true);
+    $pdf->SetFont('Arial', '', 8);
+    $pdf->Cell(35, 6, fpdf_txt($placa), 1, 0, 'C');
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->Cell(35, 6, fpdf_txt('Código del Vehículo:'), 1, 0, 'L', true);
+    $pdf->SetFont('Arial', '', 8);
+    $pdf->Cell(30, 6, fpdf_txt($codigo), 1, 0, 'C');
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->Cell(15, 6, fpdf_txt('Hora:'), 1, 0, 'L', true);
+    $pdf->SetFont('Arial', '', 8);
+    $pdf->Cell(18, 6, fpdf_txt($hora), 1, 0, 'C');
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->Cell(17, 6, fpdf_txt('Odómetro:'), 1, 0, 'L', true);
+    $pdf->SetFont('Arial', '', 8);
+    $pdf->Cell(15, 6, fpdf_txt((string)$odometro), 1, 1, 'C');
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->Cell(25, 6, fpdf_txt('Nombre:'), 1, 0, 'L', true);
+    $pdf->SetFont('Arial', '', 8);
+    $pdf->Cell(70, 6, fpdf_txt($nombre), 1, 0, 'L');
+    $pdf->SetFont('Arial', 'B', 7);
+    $pdf->Cell(95, 6, fpdf_txt('Leyenda: [ C ] Correcto | [ I ] Incorrecto | [ N/A ] No Aplicable'), 1, 1, 'C', true);
+
+    $pdf->Ln(2);
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->SetFillColor(230, 230, 230);
+    $pdf->Cell(45, 6, fpdf_txt('ESTADO DEL VEHÍCULO:'), 1, 0, 'L', true);
+
+    if ($dictamen === 'APTO PARA CONDUCIR') {
+        $pdf->SetFillColor(220, 245, 220);
+        $pdf->SetTextColor(0, 100, 0);
+    } else {
+        $pdf->SetFillColor(255, 220, 220);
+        $pdf->SetTextColor(180, 0, 0);
+    }
+
+    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->Cell(145, 6, fpdf_txt($dictamen), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+
+    $pdf->Ln(2);
+    $pdf->SetFillColor(28, 32, 36);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->Cell(145, 6, fpdf_txt('Parámetros a Inspeccionar'), 1, 0, 'L', true);
+    $pdf->Cell(45, 6, fpdf_txt('Resultado'), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFont('Arial', '', 7.5);
+
+    foreach ($parametros as $i => $item) {
+        $res = $respuestas[$i];
+
+        if ($res === 'C') {
+            $texto = 'Correcto [C]';
+            $pdf->SetFillColor(220, 245, 220);
+        } elseif ($res === 'I') {
+            $texto = 'Incorrecto [I]';
+            $pdf->SetFillColor(255, 220, 220);
+        } else {
+            $texto = 'N/A';
+            $pdf->SetFillColor(240, 240, 240);
+        }
+
+        $pdf->Cell(145, 4.8, fpdf_txt(($i + 1) . '. ' . $item['nombre']), 1, 0, 'L');
+        $pdf->Cell(45, 4.8, fpdf_txt($texto), 1, 1, 'C', true);
+    }
+
+    foreach ($camposNuevos as $nombreCampo => $valorCampo) {
+        $fatigaMarcada = $nombreCampo === '* ¿Se siente fatigado?' && $valorCampo === 'SI';
+        if ($fatigaMarcada) {
+            $pdf->SetFillColor(255, 220, 220);
+            $pdf->SetTextColor(180, 0, 0);
+        } else {
+            $pdf->SetFillColor(240, 240, 240);
+            $pdf->SetTextColor(0, 0, 0);
+        }
+        $pdf->Cell(145, 4.8, fpdf_txt($nombreCampo), 1, 0, 'L');
+        $pdf->Cell(45, 4.8, fpdf_txt($valorCampo), 1, 1, 'C', true);
+        $pdf->SetTextColor(0, 0, 0);
+    }
+
+    $pdf->Ln(2);
+    $pdf->SetFont('Arial', 'B', 8);
+    $pdf->Cell(0, 4, fpdf_txt('Notas / Observaciones:'), 0, 1);
+    $pdf->SetFont('Arial', '', 7.5);
+    $obs = $observaciones !== '' ? $observaciones : 'Sin observaciones registradas.';
+    $pdf->MultiCell(0, 4, fpdf_txt($obs), 1, 'L');
+
+    $archivo = preg_replace('/[^a-zA-Z0-9_\-]/', '', $codigo);
+    $idArchivo = $inspeccionId !== null ? '_' . $inspeccionId : '';
+    $filename = 'Inspeccion_' . $archivo . $idArchivo . '_' . date('Ymd_His') . '.pdf';
+    $pdf->Output('D', $filename);
+    exit;
+}
+
 $mensaje = null;
 $error = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+    $id = is_scalar($_GET['id'])
+        ? filter_var((string)$_GET['id'], FILTER_VALIDATE_INT)
+        : false;
+    if ($id === false || $id < 1) {
+        http_response_code(400);
+        exit('ID de inspección inválido.');
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT placa, codigo_vehiculo, hora, odometro, nombre_conductor, estado, observaciones
+        FROM inspecciones
+        WHERE id = ? AND userID = ?
+    ");
+    $stmt->execute([$id, (int)$_SESSION['uid']]);
+    $inspeccion = $stmt->fetch();
+
+    if (!$inspeccion) {
+        http_response_code(404);
+        exit('Inspección no encontrada.');
+    }
+
+    $stmt = $pdo->prepare("SELECT parametro, resultado FROM detalles_inspeccion WHERE inspeccion_id = ? ORDER BY id ASC");
+    $stmt->execute([$id]);
+    $detalles = [];
+    foreach ($stmt->fetchAll() as $detalle) {
+        $detalles[$detalle['parametro']] = $detalle['resultado'];
+    }
+
+    $resultadoCodigo = [
+        'c' => 'C',
+        'cumple' => 'C',
+        'i' => 'I',
+        'incumple' => 'I',
+        'na' => 'NA',
+        'no aplica' => 'NA'
+    ];
+    $respuestas = [];
+    foreach ($parametros as $i => $item) {
+        $resultado = strtolower(trim((string)($detalles[$item['nombre']] ?? '')));
+        if (!isset($resultadoCodigo[$resultado])) {
+            http_response_code(500);
+            error_log('Falta un resultado válido en la inspección ' . $id . ' para el parámetro: ' . $item['nombre']);
+            exit('No se pudo generar el PDF porque faltan datos de la inspección.');
+        }
+        $respuestas[$i] = $resultadoCodigo[$resultado];
+    }
+
+    $camposNuevos = [
+        'Cinta de precaución amarilla/roja' => '',
+        'GPS Activo' => '',
+        'Radio Base / Radio Portátil' => '',
+        'Tarjeta GPS' => '',
+        '* ¿Se siente fatigado?' => '',
+        'Nivel de Combustible' => '',
+        'Último mantenimiento' => ''
+    ];
+    foreach ($camposNuevos as $nombreCampo => $valorActual) {
+        if (!array_key_exists($nombreCampo, $detalles)) {
+            continue;
+        }
+        $resultado = (string)$detalles[$nombreCampo];
+        if ($nombreCampo === '* ¿Se siente fatigado?') {
+            $camposNuevos[$nombreCampo] = in_array(strtolower(trim($resultado)), ['i', 'incumple'], true) ? 'SI' : 'NO';
+        } else {
+            $resultadoNormalizado = strtolower(trim($resultado));
+            $camposNuevos[$nombreCampo] = $resultadoCodigo[$resultadoNormalizado] ?? $resultado;
+        }
+    }
+
+    try {
+        generar_pdf_inspeccion(
+            (string)$inspeccion['placa'],
+            (string)$inspeccion['codigo_vehiculo'],
+            (string)$inspeccion['hora'],
+            (int)$inspeccion['odometro'],
+            (string)$inspeccion['nombre_conductor'],
+            (string)$inspeccion['estado'],
+            $parametros,
+            $respuestas,
+            $camposNuevos,
+            (string)$inspeccion['observaciones'],
+            (int)$id
+        );
+    } catch (RuntimeException $e) {
+        error_log('Error al generar PDF de inspección ' . $id . ': ' . $e->getMessage());
+        http_response_code(500);
+        exit('No se pudo generar el PDF.');
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -228,108 +439,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $pdo->commit();
 
-        if (isset($_POST['generar_pdf']) && $_POST['generar_pdf'] === '1' && class_exists('PDF_Formato')) {
-            $pdf = new PDF_Formato('P', 'mm', 'A4');
-            $pdf->AliasNbPages();
-            $pdf->SetMargins(10, 10, 10);
-            $pdf->SetAutoPageBreak(true, 22);
-            $pdf->AddPage();
-
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->SetFillColor(230, 230, 230);
-            $pdf->Cell(25, 6, fpdf_txt('Placa:'), 1, 0, 'L', true);
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->Cell(35, 6, fpdf_txt($placa), 1, 0, 'C');
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->Cell(35, 6, fpdf_txt('Código del Vehículo:'), 1, 0, 'L', true);
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->Cell(30, 6, fpdf_txt($codigo), 1, 0, 'C');
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->Cell(15, 6, fpdf_txt('Hora:'), 1, 0, 'L', true);
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->Cell(18, 6, fpdf_txt($hora), 1, 0, 'C');
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->Cell(17, 6, fpdf_txt('Odómetro:'), 1, 0, 'L', true);
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->Cell(15, 6, fpdf_txt((string)$odometro), 1, 1, 'C');
-
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->Cell(25, 6, fpdf_txt('Nombre:'), 1, 0, 'L', true);
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->Cell(70, 6, fpdf_txt($nombre), 1, 0, 'L');
-            $pdf->SetFont('Arial', 'B', 7);
-            $pdf->Cell(95, 6, fpdf_txt('Leyenda: [ C ] Correcto | [ I ] Incorrecto | [ N/A ] No Aplicable'), 1, 1, 'C', true);
-
-            $pdf->Ln(2);
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->SetFillColor(230, 230, 230);
-            $pdf->Cell(45, 6, fpdf_txt('ESTADO DEL VEHÍCULO:'), 1, 0, 'L', true);
-
-            if ($dictamen === 'APTO PARA CONDUCIR') {
-                $pdf->SetFillColor(220, 245, 220);
-                $pdf->SetTextColor(0, 100, 0);
-            } else {
-                $pdf->SetFillColor(255, 220, 220);
-                $pdf->SetTextColor(180, 0, 0);
-            }
-
-            $pdf->SetFont('Arial', 'B', 9);
-            $pdf->Cell(145, 6, fpdf_txt($dictamen), 1, 1, 'C', true);
-            $pdf->SetTextColor(0, 0, 0);
-
-            $pdf->Ln(2);
-            $pdf->SetFillColor(28, 32, 36);
-            $pdf->SetTextColor(255, 255, 255);
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->Cell(145, 6, fpdf_txt('Parámetros a Inspeccionar'), 1, 0, 'L', true);
-            $pdf->Cell(45, 6, fpdf_txt('Resultado'), 1, 1, 'C', true);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->SetFont('Arial', '', 7.5);
-
-            foreach ($parametros as $i => $item) {
-                $res = $respuestas[$i];
-
-                if ($res === 'C') {
-                    $texto = 'Correcto [C]';
-                    $pdf->SetFillColor(220, 245, 220);
-                } elseif ($res === 'I') {
-                    $texto = 'Incorrecto [I]';
-                    $pdf->SetFillColor(255, 220, 220);
-                } else {
-                    $texto = 'N/A';
-                    $pdf->SetFillColor(240, 240, 240);
-                }
-
-                $pdf->Cell(145, 4.8, fpdf_txt(($i + 1) . '. ' . $item['nombre']), 1, 0, 'L');
-                $pdf->Cell(45, 4.8, fpdf_txt($texto), 1, 1, 'C', true);
-            }
-
-            foreach ($camposNuevos as $nombreCampo => $valorCampo) {
-                $fatigaMarcada = $nombreCampo === '* ¿Se siente fatigado?' && $valorCampo === 'SI';
-                if ($fatigaMarcada) {
-                    $pdf->SetFillColor(255, 220, 220);
-                    $pdf->SetTextColor(180, 0, 0);
-                } else {
-                    $pdf->SetFillColor(240, 240, 240);
-                    $pdf->SetTextColor(0, 0, 0);
-                }
-                $pdf->Cell(145, 4.8, fpdf_txt($nombreCampo), 1, 0, 'L');
-                $pdf->Cell(45, 4.8, fpdf_txt($valorCampo), 1, 1, 'C', true);
-                $pdf->SetTextColor(0, 0, 0);
-            }
-
-            $pdf->Ln(2);
-            $pdf->SetFont('Arial', 'B', 8);
-            $pdf->Cell(0, 4, fpdf_txt('Notas / Observaciones:'), 0, 1);
-            $pdf->SetFont('Arial', '', 7.5);
-            $obs = $observaciones !== '' ? $observaciones : 'Sin observaciones registradas.';
-            $pdf->MultiCell(0, 4, fpdf_txt($obs), 1, 'L');
-
-            $archivo = preg_replace('/[^a-zA-Z0-9_\-]/', '', $codigo);
-            $filename = 'Inspeccion_' . $archivo . '_' . date('Ymd_His') . '.pdf';
-
-            $pdf->Output('D', $filename);
-            exit;
+        if (isset($_POST['generar_pdf']) && $_POST['generar_pdf'] === '1') {
+            generar_pdf_inspeccion(
+                $placa,
+                $codigo,
+                $hora,
+                (int)$odometro,
+                $nombre,
+                $dictamen,
+                $parametros,
+                $respuestas,
+                $camposNuevos,
+                $observaciones
+            );
         }
 
         $mensaje = 'Inspección registrada con éxito.';
