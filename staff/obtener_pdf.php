@@ -135,11 +135,11 @@ function generar_pdf_inspeccion(
     $pdf->SetFont('Arial', 'B', 8);
     $pdf->Cell(35, 6, fpdf_txt('Código del Vehículo:'), 1, 0, 'L', true);
     $pdf->SetFont('Arial', '', 8);
-    $pdf->Cell(30, 6, fpdf_txt($codigo), 1, 0, 'C');
+    $pdf->Cell(18, 6, fpdf_txt($codigo), 1, 0, 'C');
     $pdf->SetFont('Arial', 'B', 8);
-    $pdf->Cell(15, 6, fpdf_txt('Hora:'), 1, 0, 'L', true);
+    $pdf->Cell(15, 6, fpdf_txt('Fecha:'), 1, 0, 'L', true);
     $pdf->SetFont('Arial', '', 8);
-    $pdf->Cell(18, 6, fpdf_txt($hora), 1, 0, 'C');
+    $pdf->Cell(30, 6, fpdf_txt($hora), 1, 0, 'C');
     $pdf->SetFont('Arial', 'B', 8);
     $pdf->Cell(17, 6, fpdf_txt('Odómetro:'), 1, 0, 'L', true);
     $pdf->SetFont('Arial', '', 8);
@@ -236,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     }
 
     $stmt = $pdo->prepare("
-        SELECT placa, codigo_vehiculo, hora, odometro, nombre_conductor, estado, observaciones
+        SELECT placa, codigo_vehiculo, fecha_registro, odometro, nombre_conductor, estado, observaciones
         FROM inspecciones
         WHERE id = ? AND userID = ?
     ");
@@ -300,7 +300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
         generar_pdf_inspeccion(
             (string)$inspeccion['placa'],
             (string)$inspeccion['codigo_vehiculo'],
-            (string)$inspeccion['hora'],
+            (string)$inspeccion['fecha_registro'],
             (int)$inspeccion['odometro'],
             (string)$inspeccion['nombre_conductor'],
             (string)$inspeccion['estado'],
