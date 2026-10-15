@@ -233,17 +233,25 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'guardar' && $_SERVER[
 
 if ($pdo && isset($_GET['action']) && $_GET['action'] === 'actualizar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-    $token = trim($_POST['edit_token'] ?? '');
+    $autorizacion = trim($_POST['autorizacion'] ?? $_POST['edit_token'] ?? '');
     $nuevo_estado = trim($_POST['estado'] ?? '');
+    $pin_maestro_valido = isset($pin_maestro) && $pin_maestro !== '' && hash_equals($pin_maestro, $autorizacion);
 
-    if ($id > 0 && $token !== '' && $has_estado && in_array($nuevo_estado, ['En desarrollo', 'Finalizado'], true)) {
+    if ($id > 0 && $autorizacion !== '' && $has_estado && in_array($nuevo_estado, ['En desarrollo', 'Finalizado'], true)) {
         $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
 
         try {
-            $stmtOwner = $pdo->prepare("SELECT id FROM tareas WHERE id = ? AND edit_token = ? LIMIT 1");
-            $stmtOwner->execute([$id, $token]);
+            if ($pin_maestro_valido) {
+                $stmtOwner = $pdo->prepare("SELECT id FROM tareas WHERE id = ? LIMIT 1");
+                $stmtOwner->execute([$id]);
+            } elseif ($has_edit_token) {
+                $stmtOwner = $pdo->prepare("SELECT id FROM tareas WHERE id = ? AND edit_token = ? LIMIT 1");
+                $stmtOwner->execute([$id, $autorizacion]);
+            } else {
+                $stmtOwner = false;
+            }
 
-            if ($stmtOwner->fetch() === false) {
+            if ($stmtOwner === false || $stmtOwner->fetch() === false) {
                 if ($isAjax) {
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'error', 'message' => 'No tiene permisos para editar este registro.']);
@@ -253,8 +261,13 @@ if ($pdo && isset($_GET['action']) && $_GET['action'] === 'actualizar' && $_SERV
                 exit;
             }
 
-            $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ? AND edit_token = ?");
-            $stmt->execute([$nuevo_estado, $id, $token]);
+            if ($pin_maestro_valido) {
+                $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ?");
+                $stmt->execute([$nuevo_estado, $id]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE tareas SET estado = ? WHERE id = ? AND edit_token = ?");
+                $stmt->execute([$nuevo_estado, $id, $autorizacion]);
+            }
 
             if ($isAjax) {
                 header('Content-Type: application/json');

@@ -702,7 +702,7 @@ include 'controller_ats.php';
                 const id = this.dataset.id;
                 const estado = this.value;
                 const previousValue = this.dataset.currentValue;
-                const token = window.prompt('Ingrese el token de autorización para cambiar el estado de esta tarea:');
+                const token = window.prompt('Ingrese el PIN maestro o el token generado para esta tarea:');
 
                 if (token === null) {
                     this.value = previousValue;
@@ -712,7 +712,7 @@ include 'controller_ats.php';
                 const tokenTrimmed = token.trim();
                 if (tokenTrimmed === '') {
                     this.value = previousValue;
-                    alert('Debe ingresar el token de autorización para modificar el estado.');
+                    alert('Debe ingresar el PIN maestro o el token de autorización para modificar el estado.');
                     return;
                 }
 
@@ -721,7 +721,7 @@ include 'controller_ats.php';
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
                     },
-                    body: `id=${encodeURIComponent(id)}&estado=${encodeURIComponent(estado)}&edit_token=${encodeURIComponent(tokenTrimmed)}`
+                    body: `id=${encodeURIComponent(id)}&estado=${encodeURIComponent(estado)}&autorizacion=${encodeURIComponent(tokenTrimmed)}`
                 })
                 .then(response => response.json())
                 .then(res => {
